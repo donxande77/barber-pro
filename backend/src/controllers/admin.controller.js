@@ -12,6 +12,7 @@ import * as comp from '../services/compensation.service.js';
 import * as fin from '../services/finance.service.js';
 import * as dash from '../services/dashboard.service.js';
 import * as pub from '../services/public.service.js';
+import * as posts from '../services/post.service.js';
 
 const p = (v) => v.params;
 const b = (v) => v.body;
@@ -152,4 +153,11 @@ export const dashCtl = {
 export const reviewCtl = {
   list: handle((ctx, v) => pub.listReviews(ctx, q(v))),
   moderate: handle((ctx, v) => pub.moderateReview(ctx, p(v).id, b(v))),
+};
+
+export const postCtl = {
+  list: handle((ctx, v) => posts.listPosts(ctx, q(v))),
+  create: handle((ctx, v) => posts.createPost(ctx, b(v)), 201),
+  update: handle((ctx, v) => posts.updatePost(ctx, p(v).id, b(v))),
+  remove: handle((ctx, v) => posts.deletePost(ctx, p(v).id), 204),
 };

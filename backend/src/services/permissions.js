@@ -36,6 +36,10 @@ export const PERMISSIONS = {
   'finance:own:read': ['BARBER'], // somente os próprios dados
   'payouts:manage': ['OWNER', 'MANAGER'],
 
+  // Mural de cortes
+  'mural:manage': ['OWNER', 'MANAGER'], // publicar, ocultar, destacar
+  'mural:submit': ['OWNER', 'MANAGER', 'BARBER'], // barbeiro envia os próprios cortes para aprovação
+
   // Estoque e avaliações
   'stock:manage': ['OWNER', 'MANAGER'],
   'reviews:moderate': ['OWNER', 'MANAGER'],

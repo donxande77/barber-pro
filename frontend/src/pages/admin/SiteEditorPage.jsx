@@ -7,7 +7,7 @@ import { FONT_STACKS } from '../../lib/theme.js';
 import { PageHeader, Spinner, Alert, Tabs, Field, ImageInput, Pill, ConfirmButton } from '../../components/ui.jsx';
 
 const SECTION_LABELS = {
-  hero: 'Banner principal', about: 'Sobre a barbearia', services: 'Serviços e preços', promotions: 'Promoções', barbers: 'Barbeiros',
+  hero: 'Banner principal', about: 'Sobre a barbearia', services: 'Serviços e preços', lookbook: 'Mural de cortes', promotions: 'Promoções', barbers: 'Barbeiros',
   gallery: 'Galeria de cortes', products: 'Produtos', reviews: 'Avaliações', units: 'Unidades, endereço e horários', policies: 'Política de cancelamento',
 };
 const COLOR_LABELS = {

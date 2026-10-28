@@ -10,6 +10,10 @@ import { createSale, closeSale, addPayment, addItem } from '../src/services/sale
 import { createRule, createPayout, generatePeriodic } from '../src/services/compensation.service.js';
 import { createTransaction, createTransfer, createBill, payBill } from '../src/services/finance.service.js';
 import { DEFAULT_SITE_CONFIG } from '../src/services/site-defaults.js';
+import { importFolderServices } from './seed-services.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 if (env.isProd) {
   console.error('Seed de demonstração bloqueado em produção.');
@@ -69,6 +73,16 @@ async function main() {
     sobr: await svc('Sobrancelha', barba.id, 'Acabamento na navalha.', '15.00', '18.00', 10),
     combo: await svc('Corte + barba', combos.id, 'O clássico da casa.', '75.00', '90.00', 60, true),
   };
+  // Serviços do folder, com preços fictícios só para a demonstração
+  const DEMO_PRICES = {
+    'Kone hindu': '40.00', Sobrancelhas: '20.00', Barboterapia: '60.00', 'Camuflagem cabelo e barba': '70.00', 'Limpeza de pele': '80.00',
+    'Hidratação cabelo e barba': '45.00', Selagem: '120.00', 'Epilação nariz e orelha': '25.00', 'Alinhamento capilar': '110.00', 'Epilação faixa de barba': '30.00',
+  };
+  const folder = await importFolderServices(company.id, {
+    offers: (f) => [centro, jardins].map((u, i) => ({ unitId: u.id, price: (Number(DEMO_PRICES[f.name]) + i * 5).toFixed(2), durationMin: f.durationMin })),
+  });
+  const F = Object.fromEntries(folder.map((f) => [f.name, f]));
+
   // Promoção vigente
   await prisma.serviceUnit.updateMany({
     where: { serviceId: S.combo.id, unitId: centro.id },
@@ -79,7 +93,7 @@ async function main() {
     prisma.product.create({ data: { companyId: company.id, name, price, cost, commissionPct: '10.00', stocks: { create: [{ unitId: centro.id, quantity: qa, minQuantity: 3 }, { unitId: jardins.id, quantity: qb, minQuantity: 3 }] } } });
   const P = { pomada: await prod('Pomada modeladora', '45.00', '18.00', 40, 30), oleo: await prod('Óleo para barba', '39.00', '15.00', 2, 6), shampoo: await prod('Shampoo', '32.00', '12.00', 9, 9) };
 
-  const allServices = Object.values(S).map((s) => ({ serviceId: s.id }));
+  const allServices = [...Object.values(S), ...folder].map((s) => ({ serviceId: s.id }));
   const mkBarber = async (name, bio, specialties, links, login) => {
     const user = login ? await prisma.user.create({ data: { companyId: company.id, name, email: login, passwordHash, role: 'BARBER' } }) : null;
     const b = await prisma.barber.create({
@@ -180,6 +194,34 @@ async function main() {
     await prisma.review.create({
       data: { unitId: centro.id, appointmentId: ap.id, clientId: s.clientId, barberId, rating: [5, 5, 4][i], comment: ['Atendimento pontual e corte perfeito.', 'Ambiente ótimo, voltarei.', 'Gostei muito da barba.'][i], status: 'APPROVED' },
     });
+  }
+
+  // Mural de cortes (fotos do folder, recortadas)
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  fs.mkdirSync(env.UPLOAD_DIR, { recursive: true });
+  const img = (f) => {
+    fs.copyFileSync(path.join(here, 'assets', 'mural', f), path.join(env.UPLOAD_DIR, `mural-${f}`));
+    return `/uploads/mural-${f}`;
+  };
+  const muralPosts = [
+    { title: 'Alinhamento com volume controlado', description: 'Cachos alinhados, laterais baixas e acabamento com navalha.', imageUrls: [img('alinhamento-antes.jpg'), img('alinhamento-depois.jpg')], tags: ['Alinhamento', 'Degradê'], serviceIds: [F['Alinhamento capilar'].id, S.degrade.id], barberId: rafael.id, unitId: centro.id, featured: true },
+    { title: 'Selagem com topete', description: 'Fios disciplinados e brilho, mantendo o movimento natural.', imageUrls: [img('selagem-antes.jpg'), img('selagem-depois.jpg')], tags: ['Selagem', 'Topete'], serviceIds: [F.Selagem.id, S.trad.id], barberId: rafael.id, unitId: null },
+    { title: 'Grisalho natural', description: 'Camuflagem de cabelo e barba: suaviza os fios brancos sem pintar.', imageUrls: [img('camuflagem-antes.jpg'), img('camuflagem-depois.jpg')], tags: ['Camuflagem', 'Barba'], serviceIds: [F['Camuflagem cabelo e barba'].id, S.barba.id], barberId: bruno.id, unitId: centro.id },
+    { title: 'Barba com linha definida', description: 'Epilação na faixa da barba para um contorno limpo por cerca de 20 dias.', imageUrls: [img('faixa-barba-antes.jpg'), img('faixa-barba-depois.jpg')], tags: ['Barba'], serviceIds: [S.barba.id, F['Epilação faixa de barba'].id], barberId: bruno.id, unitId: null },
+  ];
+  const postIds = [];
+  for (const [i, p] of muralPosts.entries()) {
+    const post = await prisma.haircutPost.create({ data: { ...p, companyId: company.id, status: 'PUBLISHED', publishedAt: new Date(), sortOrder: i, createdById: owner.id } });
+    postIds.push(post.id);
+  }
+  // Um envio do barbeiro aguardando aprovação
+  await prisma.haircutPost.create({ data: { companyId: company.id, title: 'Degradê navalhado (aguardando aprovação)', imageUrls: [img('selagem-depois.jpg')], tags: ['Degradê'], serviceIds: [S.degrade.id], barberId: rafael.id, unitId: centro.id, status: 'PENDING', createdById: owner.id } });
+  // Agendamento futuro que veio do mural
+  try {
+    const d = new Date(Date.now() + 3 * 86_400_000).getDay() === 0 ? 4 : 3;
+    await createAppointment({ ctx: null, unitId: centro.id, serviceIds: [F['Alinhamento capilar'].id, S.degrade.id], barberId: rafael.id, startsAt: at(d, '15:00'), client: { name: 'Cliente do mural (demonstração)', phone: '11999992000' }, source: 'PUBLIC', referencePostId: postIds[0] });
+  } catch {
+    /* horário indisponível na demonstração */
   }
 
   await prisma.siteConfigVersion.create({

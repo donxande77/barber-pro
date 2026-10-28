@@ -7,6 +7,7 @@ import { assertDate, dayRange, hhmm, localDateOf, localToUtc, minutesOfDay, week
 import { effectivePrice } from './catalog.service.js';
 import { findOrCreateByPhone } from './client.service.js';
 import { isExclusionViolation } from '../middlewares/error.js';
+import { validateReference } from './post.service.js';
 
 const ACTIVE = ['SCHEDULED', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED'];
 const FINAL = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
@@ -111,15 +112,17 @@ const include = {
   barber: { select: { id: true, name: true, photoUrl: true } },
   unit: { select: { id: true, name: true, timezone: true } },
   sale: { select: { id: true, status: true, total: true } },
+  referencePost: { select: { id: true, title: true, imageUrls: true } },
 };
 
 /**
  * Cria um agendamento (público ou interno). Revalida o horário no servidor e grava
  * numa transação; se outro pedido levar o mesmo horário ao mesmo tempo, o banco recusa (409).
  */
-export async function createAppointment({ ctx, unitId, serviceIds, barberId, startsAt, clientId, client, notes, source, leadMinutes = 0 }) {
+export async function createAppointment({ ctx, unitId, serviceIds, barberId, startsAt, clientId, client, notes, source, leadMinutes = 0, referencePostId }) {
   const unit = await prisma.unit.findUnique({ where: { id: unitId } });
   if (!unit) throw notFound('Unidade não encontrada.');
+  const refId = await validateReference(unit.companyId, referencePostId);
   const date = localDateOf(startsAt, unit.timezone);
   const avail = await computeSlots({ unitId, date, serviceIds, barberId, leadMinutes });
   const slot = avail.slots.find((s) => new Date(s.startsAt).getTime() === startsAt.getTime());
@@ -163,6 +166,7 @@ export async function createAppointment({ ctx, unitId, serviceIds, barberId, sta
           totalPrice: toMoneyString(sum(priced.map((p) => p.price))),
           createdById: ctx?.user?.id ?? null,
           manageToken: randomToken(24),
+          referencePostId: refId,
           items: {
             create: priced.map((p) => ({
               serviceId: p.serviceId,

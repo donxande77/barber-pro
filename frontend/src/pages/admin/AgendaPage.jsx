@@ -69,7 +69,7 @@ export default function AgendaPage() {
                         <span className="num font-heading text-lg">{timeBR(a.startsAt, tz)}–{timeBR(a.endsAt, tz)}</span>
                         <Pill tone={STATUS_TONE[a.status]}>{LABELS.appointment[a.status]}</Pill>
                       </div>
-                      <p className="mt-1 truncate font-medium">{a.client.name}</p>
+                      <p className="mt-1 truncate font-medium">{a.client.name}{a.referencePost && <span className="ml-2 text-xs text-gold">· corte do mural</span>}</p>
                       <p className="truncate text-xs text-muted">{a.items.map((i) => i.serviceName).join(' + ')} · {brl(a.totalPrice)}</p>
                     </button>
                   </li>
@@ -118,6 +118,15 @@ function AppointmentDetail({ appt, tz, manage, onClose, onChanged }) {
           <Pill tone={STATUS_TONE[appt.status]}>{LABELS.appointment[appt.status]}</Pill>
           <span className="text-muted">{appt.source === 'PUBLIC' ? 'Agendado pelo site' : 'Agendado pela equipe'}</span>
         </div>
+        {appt.referencePost && (
+          <div className="flex items-center gap-3 rounded-lg border border-gold/30 bg-gold/[0.06] p-2">
+            <img src={appt.referencePost.imageUrls[appt.referencePost.imageUrls.length >= 2 ? 1 : 0]} alt="" className="h-14 w-14 rounded object-cover" />
+            <div className="min-w-0">
+              <p className="text-xs text-muted">Corte escolhido no mural</p>
+              <p className="truncate font-medium">{appt.referencePost.title}</p>
+            </div>
+          </div>
+        )}
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           <dt className="text-muted">Data</dt><dd className="capitalize">{longDate(appt.startsAt, tz)}, {timeBR(appt.startsAt, tz)}–{timeBR(appt.endsAt, tz)}</dd>
           <dt className="text-muted">Barbeiro</dt><dd>{appt.barber.name}</dd>

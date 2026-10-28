@@ -44,6 +44,10 @@ export default function BookingPage() {
   const [slots, setSlots] = useState({ loading: false, data: null, error: null });
   const [result, setResult] = useState(null);
   const [submitError, setSubmitError] = useState('');
+  // Corte escolhido no mural (referência para o barbeiro)
+  const [reference, setReference] = useState(null);
+  const [refApplied, setRefApplied] = useState(false);
+  const corteId = params.get('corte');
 
   const services = useMemo(() => catalog.data?.services ?? [], [catalog.data]);
   const barbers = useMemo(() => catalog.data?.barbers ?? [], [catalog.data]);
@@ -54,6 +58,29 @@ export default function BookingPage() {
   const tz = unit?.timezone ?? 'America/Sao_Paulo';
   const days = useMemo(() => Array.from({ length: 21 }, (_, i) => addDays(isoDay(0, tz), i)), [tz]);
   const openWeekdays = new Set(unit?.hours.map((h) => h.weekday));
+
+  useEffect(() => {
+    if (!corteId) return;
+    api
+      .get(`/public/posts/${corteId}`)
+      .then((p) => {
+        setReference(p);
+        if (p.unitId) {
+          setUnitId(p.unitId);
+          setStep(1);
+        }
+        if (p.barber) setBarberId(p.barber.id);
+      })
+      .catch(() => setReference(null));
+  }, [corteId, setUnitId]);
+
+  // Quando o catálogo da unidade chega, marca os serviços do corte escolhido
+  useEffect(() => {
+    if (!reference || refApplied || !catalog.data) return;
+    const available = new Set(catalog.data.services.map((x) => x.id));
+    setServiceIds(reference.serviceIds.filter((id) => available.has(id)).slice(0, 6));
+    setRefApplied(true);
+  }, [reference, refApplied, catalog.data]);
 
   // Profissional pré-escolhido que não atende os serviços é descartado
   useEffect(() => {
@@ -76,7 +103,7 @@ export default function BookingPage() {
     setSubmitError('');
     try {
       const r = await api.post('/public/appointments', {
-        unitId, serviceIds, barberId, startsAt: slot.startsAt,
+        unitId, serviceIds, barberId, startsAt: slot.startsAt, referencePostId: reference?.id ?? null,
         client: { name: v.name, phone: v.phone, email: v.email || null }, notes: v.notes || null, consent: true,
       });
       setResult(r);
@@ -104,6 +131,7 @@ export default function BookingPage() {
             {longDate(result.startsAt, tz)}, às {timeBR(result.startsAt, tz)} com {result.barber} — {result.unit}.
           </p>
           <p className="mt-1 text-muted">{result.services.join(' + ')} · {brl(result.totalPrice)} (pagamento na unidade)</p>
+          {result.reference && <p className="mt-1 text-sm text-gold">Referência enviada ao profissional: {result.reference.title}</p>}
           <div className="mt-6 rounded-lg border border-white/10 p-4 text-left text-sm">
             <p className="text-muted">Guarde este link para consultar ou cancelar:</p>
             <Link to={`/agendamento/${result.manageToken}`} className="mt-1 block break-all text-gold underline">{result.manageUrl}</Link>
@@ -123,6 +151,17 @@ export default function BookingPage() {
         <h1 className="font-heading text-4xl">Agendar horário</h1>
       </div>
       <Progress step={step} />
+      {reference && (
+        <div className="mb-6 flex items-center gap-4 rounded-xl border border-gold/30 bg-gold/[0.06] p-3">
+          <img src={reference.imageUrls[reference.imageUrls.length >= 2 ? 1 : 0]} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted">Corte de referência</p>
+            <p className="truncate font-heading text-lg">{reference.title}</p>
+            {reference.barber && <p className="truncate text-xs text-muted">feito por {reference.barber.name}</p>}
+          </div>
+          <button type="button" className="text-xs text-muted hover:text-ink" onClick={() => setReference(null)}>Remover</button>
+        </div>
+      )}
 
       {step === 0 && (
         <section>

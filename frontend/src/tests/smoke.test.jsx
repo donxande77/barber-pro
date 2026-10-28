@@ -31,6 +31,8 @@ const cases = [
   ['/', /Serviços e preços/],
   ['/agendar', /Agendar horário/],
   ['/privacidade', /Privacidade/],
+  ['/mural', /Mural de cortes/],
+  ['/painel/mural', /Mural de cortes/],
   ['/painel', /Visão da empresa/],
   ['/painel/agenda', /Agenda/],
   ['/painel/atendimentos', /Atendimentos e vendas/],
@@ -86,6 +88,22 @@ describe('dados aparecem', () => {
     fireEvent.click(unitBtn[0]);
     await waitFor(() => expect(screen.getAllByText(/Degradê/).length).toBeGreaterThan(0), { timeout: 4000 });
     expect(document.body.textContent).toMatch(/R\$\s?55,00/);
+    cleanup();
+  });
+});
+
+describe('mural de cortes', () => {
+  it('abre o corte e leva ao agendamento com a referência e os serviços marcados', async () => {
+    renderAt('/mural');
+    const card = await screen.findByRole('button', { name: /Ver Alinhamento com volume controlado/ }, { timeout: 4000 });
+    fireEvent.click(card);
+    const want = await screen.findByRole('button', { name: /Quero este corte/ });
+    fireEvent.click(want);
+    await waitFor(() => expect(screen.getAllByText(/Corte de referência/).length).toBeGreaterThan(0), { timeout: 4000 });
+    await waitFor(() => expect(document.body.textContent).toMatch(/Alinhamento capilar/), { timeout: 4000 });
+    const pressed = screen.getAllByRole('button', { pressed: true }).map((b) => b.textContent);
+    expect(pressed.join(' ')).toMatch(/Alinhamento capilar/);
+    expect(pressed.join(' ')).toMatch(/Degradê/);
     cleanup();
   });
 });

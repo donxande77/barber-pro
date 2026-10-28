@@ -28,9 +28,11 @@ Base: `/api`. JSON em UTF-8. Valores monetários trafegam como **string decimal*
 | GET | `/public/site` | Configuração visual publicada + unidades ativas (endereço, horários, contatos, política) |
 | GET | `/public/units/:unitId/catalog` | Serviços (com promoção vigente), barbeiros, produtos e avaliações aprovadas da unidade |
 | GET | `/public/availability?unitId&date&serviceIds=a,b&barberId?` | Horários livres (antecedência mínima de 30 min) |
-| POST | `/public/appointments` | Agendar: `{ unitId, serviceIds[], barberId?, startsAt, client{ name, phone, email? }, notes?, consent: true }` → `{ manageToken, manageUrl, ... }` |
+| POST | `/public/appointments` | Agendar: `{ unitId, serviceIds[], barberId?, startsAt, client{ name, phone, email? }, notes?, consent: true, referencePostId? }` → `{ manageToken, manageUrl, ... }` |
 | GET | `/public/appointments/:token` | Consultar agendamento pelo link do cliente |
 | POST | `/public/appointments/:token/cancel` | Cancelar (respeita o prazo da unidade) |
+| GET | `/public/posts?unitId&tag&barberId` | Mural: cortes publicados, estilos disponíveis e valor estimado na unidade |
+| GET | `/public/posts/:id` | Um corte do mural (usado no "Quero este corte") |
 | GET / POST | `/public/reviews/:token` | Ver / enviar avaliação de um atendimento concluído (`{ rating 1–5, comment? }`) |
 
 ## Autenticação e usuários
@@ -58,6 +60,14 @@ Base: `/api`. JSON em UTF-8. Valores monetários trafegam como **string decimal*
 | POST | `/site/publish` | `site:manage` — publica o rascunho; a versão anterior fica arquivada |
 | POST | `/site/versions/:id/restore` | `site:manage` — copia a versão para um novo rascunho |
 | POST | `/uploads` | `catalog:manage` — `{ dataBase64 }` PNG/JPG/WEBP até 5 MB → `{ url }` |
+
+## Mural de cortes
+
+| Método | Rota | Permissão |
+|---|---|---|
+| GET | `/posts?status&unitId` | `mural:submit` (barbeiro vê só os próprios) |
+| POST | `/posts` | `mural:submit` — `{ title, imageUrls[1–4], tags[], serviceIds[], barberId?, unitId?, description?, status?, featured? }`; barbeiro sempre cria como `PENDING` |
+| PATCH / DELETE | `/posts/:id` | `mural:submit` — publicar, ocultar e destacar só com `mural:manage` |
 
 ## Cadastros
 

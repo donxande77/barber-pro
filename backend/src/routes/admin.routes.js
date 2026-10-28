@@ -8,7 +8,7 @@ import { draftBody, uploadBody } from '../validators/site.validators.js';
 import * as cv from '../validators/catalog.validators.js';
 import * as ov from '../validators/ops.validators.js';
 import {
-  company, unitCtl, siteCtl, clientCtl, barberCtl, catalogCtl, agendaCtl, saleCtl, compCtl, finCtl, dashCtl, reviewCtl,
+  company, unitCtl, siteCtl, clientCtl, barberCtl, catalogCtl, agendaCtl, saleCtl, compCtl, finCtl, dashCtl, reviewCtl, postCtl,
 } from '../controllers/admin.controller.js';
 import { reportCtl } from '../controllers/report.controller.js';
 
@@ -33,7 +33,13 @@ admin.get('/site/draft', perm('site:manage'), siteCtl.draft);
 admin.put('/site/draft', perm('site:manage'), V({ body: draftBody }), siteCtl.saveDraft);
 admin.delete('/site/draft', perm('site:manage'), siteCtl.discardDraft);
 admin.post('/site/publish', perm('site:manage'), siteCtl.publish);
-admin.post('/uploads', perm('catalog:manage'), V({ body: uploadBody }), siteCtl.upload);
+admin.post('/uploads', perm('mural:submit'), V({ body: uploadBody }), siteCtl.upload);
+
+// Mural de cortes (barbeiro envia os próprios; gestão publica)
+admin.get('/posts', perm('mural:submit'), V({ query: ov.postListQuery }), postCtl.list);
+admin.post('/posts', perm('mural:submit'), V({ body: ov.postBody }), postCtl.create);
+admin.patch('/posts/:id', perm('mural:submit'), V({ params: idParams, body: partialNoDefaults(ov.postBody) }), postCtl.update);
+admin.delete('/posts/:id', perm('mural:submit'), V({ params: idParams }), postCtl.remove);
 
 // Clientes
 admin.get('/clients', perm('clients:read'), V({ query: cv.clientListQuery }), clientCtl.list);

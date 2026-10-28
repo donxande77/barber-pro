@@ -9,8 +9,10 @@ Guia rápido para quem usa o painel (`/entrar`). O menu mostra só o que a sua f
 3. **Produtos e estoque** → cadastre preço de venda, custo e comissão padrão. Lance a entrada de estoque em cada unidade.
 4. **Barbeiros** → cadastre foto, apresentação e especialidades; marque as unidades e o **modelo de remuneração** de cada vínculo; escolha os serviços que ele faz; defina a **escala** (dias, horário e intervalo) e, se quiser, crie o **acesso ao painel**.
 5. **Remuneração → Regras** → informe os percentuais e valores (ver abaixo).
-6. **Site e aparência** → marca, cores, textos, fotos, galeria e ordem das seções. Salve o rascunho, use **Pré-visualizar** e depois **Publicar**.
-7. **Usuários** → crie gerentes e recepcionistas e escolha as unidades de cada um.
+6. **Serviços do folder** → rode `npm run db:seed-servicos` (na pasta `backend`) para importar os 10 serviços do folder (Kone hindu, Sobrancelhas, Barboterapia, Camuflagem, Limpeza de pele, Hidratação, Selagem, Alinhamento capilar e as epilações) com descrição e imagem. Depois, em **Serviços e preços**, abra cada um, marque as unidades e informe preço e duração — sem preço o serviço não aparece no site.
+7. **Mural de cortes** → publique trabalhos da equipe (ver abaixo).
+8. **Site e aparência** → marca, cores, textos, fotos, galeria e ordem das seções. Salve o rascunho, use **Pré-visualizar** e depois **Publicar**.
+9. **Usuários** → crie gerentes e recepcionistas e escolha as unidades de cada um.
 
 ## Funções
 
@@ -63,6 +65,15 @@ Combinações fora da tabela são recusadas: mude o modelo do vínculo primeiro.
 ## Relatórios
 
 Escolha o tipo (individual, unidade ou consolidado), o período e os filtros. A tela mostra o relatório em formato A4: use **Imprimir** ou exporte em **PDF**, **Excel** ou **CSV** (o CSV abre direto no Excel em português).
+
+## Mural de cortes
+
+O mural mostra no site os cortes feitos pela equipe. O cliente filtra por estilo (Degradê, Social, Barba…), vê o antes e depois e toca em **Quero este corte**: o agendamento abre com os serviços do corte já marcados, o barbeiro que fez já escolhido e a foto anexada como referência. Na agenda, o atendimento aparece marcado como "corte do mural" com a foto.
+
+- **Publicar** (proprietário e gerente): Mural de cortes → Publicar corte. Envie de 1 a 4 fotos (com duas, a primeira é o "antes" e a segunda o "depois"), dê um nome, informe estilos, os serviços necessários, quem fez e em quais unidades aparece. "Destacar" coloca o corte no início.
+- **Barbeiros** enviam os próprios cortes pelo painel; eles ficam **aguardando aprovação** até a gerência publicar. Se o barbeiro editar um corte publicado, ele volta para aprovação.
+- **Ocultar** tira o corte do site sem apagar. Cada corte mostra quantos agendamentos já vieram dele.
+- A seção aparece na página inicial e na página `/mural`; a posição é ajustada em Site e aparência → Seções.
 
 ## Avaliações
 

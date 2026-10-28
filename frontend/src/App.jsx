@@ -6,6 +6,7 @@ import PublicLayout from './public/PublicLayout.jsx';
 import HomePage from './public/HomePage.jsx';
 import BookingPage from './public/BookingPage.jsx';
 import { ManageBookingPage, ReviewPage, PrivacyPage } from './public/TokenPages.jsx';
+import { MuralPage } from './public/Mural.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import { Spinner } from './components/ui.jsx';
 
@@ -28,6 +29,7 @@ const SiteEditorPage = lazy(() => import('./pages/admin/SiteEditorPage.jsx'));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx'));
 const ReviewsPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.ReviewsPage })));
 const AuditPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.AuditPage })));
+const MuralAdminPage = lazy(() => import('./pages/admin/MuralAdminPage.jsx'));
 const AccountPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.AccountPage })));
 
 const guard = (permission, element) => (
@@ -41,6 +43,7 @@ export default function App() {
         <Route element={<SiteProvider><PublicLayout /></SiteProvider>}>
           <Route path="/" element={<HomePage />} />
           <Route path="/agendar" element={<BookingPage />} />
+          <Route path="/mural" element={<MuralPage />} />
           <Route path="/agendamento/:token" element={<ManageBookingPage />} />
           <Route path="/avaliar/:token" element={<ReviewPage />} />
           <Route path="/privacidade" element={<PrivacyPage />} />
@@ -61,6 +64,7 @@ export default function App() {
             {guard('finance:unit:read', <Route path="financeiro" element={<FinancePage />} />)}
             {guard('payouts:manage', <Route path="remuneracao" element={<CompensationPage />} />)}
             {guard('reports:barber', <Route path="relatorios" element={<ReportsPage />} />)}
+            {guard('mural:submit', <Route path="mural" element={<MuralAdminPage />} />)}
             {guard('reviews:moderate', <Route path="avaliacoes" element={<ReviewsPage />} />)}
             {guard('units:update', <Route path="unidades" element={<UnitsPage />} />)}
             {guard('site:manage', <Route path="site" element={<SiteEditorPage />} />)}

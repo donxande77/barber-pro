@@ -14,7 +14,8 @@
     "postinstall": "prisma generate",
     "test:db-reset": "node scripts/reset-test-db.js",
     "lint": "eslint .",
-    "db:seed-demo": "node prisma/seed-demo.js"
+    "db:seed-demo": "node prisma/seed-demo.js",
+    "db:seed-servicos": "node prisma/seed-services.js"
   },
   "author": "",
   "license": "ISC",

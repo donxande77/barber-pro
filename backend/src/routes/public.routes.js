@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { env } from '../config/env.js';
 import { validate as V } from '../middlewares/validate.js';
-import { unitParams } from '../validators/common.js';
+import { unitParams, idParams } from '../validators/common.js';
 import * as ov from '../validators/ops.validators.js';
 import { publicCtl } from '../controllers/public.controller.js';
 
@@ -19,6 +19,8 @@ const limit = (max) =>
   });
 
 publicRoutes.get('/site', publicCtl.site);
+publicRoutes.get('/posts', limit(300), V({ query: ov.publicPostsQuery }), publicCtl.posts);
+publicRoutes.get('/posts/:id', limit(300), V({ params: idParams }), publicCtl.post);
 publicRoutes.get('/units/:unitId/catalog', V({ params: unitParams }), publicCtl.catalog);
 publicRoutes.get('/availability', limit(300), V({ query: ov.availabilityQuery }), publicCtl.availability);
 publicRoutes.post('/appointments', limit(env.PUBLIC_BOOKING_RATE_LIMIT_PER_15MIN), V({ body: ov.publicBookingBody }), publicCtl.book);

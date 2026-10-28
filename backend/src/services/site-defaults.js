@@ -27,7 +27,7 @@ export const DEFAULT_SITE_CONFIG = {
     text: 'Edite este texto no painel em "Site e aparência" para contar a história da sua barbearia.',
     imageUrl: null,
   },
-  sections: ['hero', 'services', 'promotions', 'barbers', 'about', 'gallery', 'products', 'reviews', 'units', 'policies'],
+  sections: ['hero', 'services', 'lookbook', 'promotions', 'barbers', 'about', 'gallery', 'products', 'reviews', 'units', 'policies'],
   gallery: [],
   social: { instagram: null, facebook: null, tiktok: null, whatsapp: null },
   policies: { cancellation: '' },

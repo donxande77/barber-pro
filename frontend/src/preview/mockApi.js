@@ -1,7 +1,10 @@
 // Modo demonstração (somente para pré-visualizar sem servidor).
 // Responde com dados reais capturados de uma API rodando com o seed de DEMONSTRAÇÃO
 // (scripts/capture-preview-fixtures.mjs). Ativado só com VITE_PREVIEW=1 no build.
-import fixtures from './fixtures.json';
+import rawFixtures from './fixtures.json';
+
+// Imagens enviadas (/uploads/...) são publicadas junto com a demonstração, em caminho relativo.
+const fixtures = JSON.parse(JSON.stringify(rawFixtures).replaceAll('"/uploads/', '"./uploads/'));
 
 export const DEMO_LOGIN = { email: 'dono@demo.barberpro', password: 'Demo2026senha' };
 let logged = false;
@@ -94,7 +97,9 @@ async function handle(method, url, body) {
   }
   if (path.startsWith('/public/')) {
     const data = lookup(path, params);
-    return data !== undefined ? json(200, data) : err(404, 'Não disponível na demonstração.');
+    if (data === undefined) return err(404, 'Não disponível na demonstração.');
+    if (path === '/public/posts' && params.get('tag')) return json(200, { ...data, posts: data.posts.filter((p) => p.tags.includes(params.get('tag'))) });
+    return json(200, data);
   }
   if (!logged) return err(401, 'Faça login para continuar.');
   if (path === '/auth/me') return json(200, fixtures.me);

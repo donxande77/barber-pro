@@ -30,10 +30,20 @@ async function get(s, path, key = path) {
 }
 const q = (o) => `?${new URLSearchParams(Object.entries(o).filter(([, v]) => v != null && v !== ''))}`;
 
-const owner = await session('dono@demo.barberpro');
+const ownerS = await session('dono@demo.barberpro');
+const owner = ownerS;
 fixtures.me = owner.me;
 const site = await get(null, '/public/site');
-for (const u of site.units) await get(null, `/public/units/${u.id}/catalog`);
+for (const u of site.units) {
+  await get(null, `/public/units/${u.id}/catalog`);
+  await get(null, `/public/posts?unitId=${u.id}`);
+}
+const allPosts = await get(null, '/public/posts');
+for (const p of allPosts.posts) await get(null, `/public/posts/${p.id}`);
+await get(owner, '/posts');
+await get(owner, '/posts?status=PENDING');
+await get(owner, '/posts?status=PUBLISHED');
+await get(owner, '/posts?status=HIDDEN');
 
 const units = await get(owner, '/units');
 const unitId = units[0].id;

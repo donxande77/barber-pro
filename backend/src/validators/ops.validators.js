@@ -26,6 +26,7 @@ export const publicBookingBody = z.object({
   }),
   notes: optionalText(300),
   consent: z.literal(true, { message: 'É preciso aceitar a política de privacidade.' }),
+  referencePostId: uuid.nullable().optional(),
 });
 
 export const internalBookingBody = z
@@ -37,6 +38,7 @@ export const internalBookingBody = z
     clientId: uuid.optional(),
     client: z.object({ name: z.string().trim().min(2).max(120), phone, email: z.email().optional().nullable().or(z.literal('').transform(() => null)) }).optional(),
     notes: optionalText(300),
+    referencePostId: uuid.nullable().optional(),
   })
   .refine((v) => v.clientId || v.client, 'Informe o cliente.');
 
@@ -190,3 +192,23 @@ export const unitReportQuery = z.object({ unitId: uuid, from: dateStr, to: dateS
 export const consolidatedReportQuery = z.object({ from: dateStr, to: dateStr, method: periodQuery.shape.method, format });
 
 export { percentInput };
+
+// ── Mural de cortes ──
+const tag = z.string().trim().min(2).max(30);
+export const postBody = z.object({
+  title: z.string().trim().min(2, 'Dê um nome ao corte.').max(80),
+  description: optionalText(600),
+  imageUrls: z
+    .array(z.string().trim().max(500).refine((v) => v.startsWith('/uploads/') || /^https:\/\/\S+$/.test(v), 'Imagem inválida.'))
+    .min(1, 'Envie ao menos uma foto.')
+    .max(4, 'No máximo 4 fotos.'),
+  tags: z.array(tag).max(8).default([]),
+  serviceIds: z.array(uuid).max(6).default([]),
+  barberId: uuid.nullable().optional(),
+  unitId: uuid.nullable().optional(),
+  status: z.enum(['PENDING', 'PUBLISHED', 'HIDDEN']).default('PUBLISHED'),
+  featured: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).max(9999).default(0),
+});
+export const postListQuery = z.object({ status: z.enum(['PENDING', 'PUBLISHED', 'HIDDEN']).optional(), unitId: uuid.optional() });
+export const publicPostsQuery = z.object({ unitId: uuid.optional(), tag: z.string().trim().max(30).optional(), barberId: uuid.optional() });

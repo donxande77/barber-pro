@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Scissors, CalendarDays, Wallet, BarChart3, Palette, LogOut, Menu, X, UserRound,
-  Receipt, Contact, Package, HandCoins, Star, ShieldCheck, ExternalLink, KeyRound,
+  Receipt, Contact, Package, HandCoins, Star, ShieldCheck, ExternalLink, KeyRound, Images,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { UnitProvider, UnitSelect, useUnit } from '../auth/UnitContext.jsx';
@@ -17,6 +17,7 @@ const NAV = [
   { to: '/painel/atendimentos', label: 'Atendimentos e vendas', icon: Receipt, permission: 'sales:manage' },
   { to: '/painel/clientes', label: 'Clientes', icon: Contact, permission: 'clients:read' },
   { to: '/painel/meu-financeiro', label: 'Meu financeiro', icon: Wallet, permission: 'finance:own:read' },
+  { to: '/painel/mural', label: 'Mural de cortes', icon: Images, permission: 'mural:submit' },
   { group: 'Cadastros', permission: 'barbers:manage' },
   { to: '/painel/barbeiros', label: 'Barbeiros', icon: Scissors, permission: 'barbers:manage' },
   { to: '/painel/servicos', label: 'Serviços e preços', icon: Scissors, permission: 'catalog:manage' },

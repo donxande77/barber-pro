@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0] — 2026-10-28
+
+### Adicionado
+- Mural de cortes: publicações com 1 a 4 fotos (antes e depois), estilos, serviços, profissional e unidade; destaque; aprovação de envios dos barbeiros; seção na página inicial e página `/mural` com filtros.
+- "Quero este corte": o agendamento abre com serviços, barbeiro e foto de referência; a referência fica gravada no agendamento e aparece na agenda; o painel mostra quantos agendamentos cada corte gerou.
+- 10 serviços do folder com descrição e imagem (`npm run db:seed-servicos`), também incluídos na demonstração.
+- 14 testes novos (168 no total).
+
 ## [1.0.0] — 2026-10-28
 
 Plataforma completa (fases 1 a 10).

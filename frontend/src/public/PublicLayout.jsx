@@ -33,6 +33,7 @@ export default function PublicLayout() {
   const anchor = (id) => (onHome ? `#${id}` : `/#${id}`);
   const links = [
     ['Serviços', 'servicos'],
+    ...(config.sections.includes('lookbook') ? [['Mural de cortes', 'mural']] : []),
     ['Barbeiros', 'barbeiros'],
     ...(config.gallery.length ? [['Galeria', 'galeria']] : []),
     ['Unidades', 'unidades'],
@@ -54,7 +55,7 @@ export default function PublicLayout() {
           </Link>
           <nav aria-label="Seções do site" className="ml-auto hidden items-center gap-7 text-sm text-ink/80 md:flex">
             {links.map(([label, id]) => (
-              <a key={id} href={anchor(id)} className="hover:text-gold">{label}</a>
+              id === 'mural' ? <Link key={id} to="/mural" className="hover:text-gold">{label}</Link> : <a key={id} href={anchor(id)} className="hover:text-gold">{label}</a>
             ))}
           </nav>
           <Link to="/agendar" className="btn-gold ml-auto md:ml-0">{config.hero.ctaLabel || 'Agendar'}</Link>
@@ -65,9 +66,11 @@ export default function PublicLayout() {
         {open && (
           <nav aria-label="Menu" className="border-t border-white/5 px-4 pb-4 md:hidden">
             {links.map(([label, id]) => (
-              <a key={id} href={anchor(id)} onClick={() => setOpen(false)} className="block py-3 text-lg font-heading">
-                {label}
-              </a>
+              id === 'mural' ? (
+                <Link key={id} to="/mural" onClick={() => setOpen(false)} className="block py-3 text-lg font-heading">{label}</Link>
+              ) : (
+                <a key={id} href={anchor(id)} onClick={() => setOpen(false)} className="block py-3 text-lg font-heading">{label}</a>
+              )
             ))}
           </nav>
         )}

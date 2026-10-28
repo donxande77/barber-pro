@@ -6,6 +6,7 @@ import { audit } from '../utils/audit.js';
 import { getPublishedConfig } from './site.service.js';
 import { effectivePrice } from './catalog.service.js';
 import { computeSlots, createAppointment, getByManageToken, cancelByManageToken } from './appointment.service.js';
+import { publicPosts, publicPost } from './post.service.js';
 
 let cachedCompanyId = null;
 export async function publicCompany() {
@@ -122,6 +123,7 @@ export async function book(data) {
     notes: data.notes,
     source: 'PUBLIC',
     leadMinutes: 30,
+    referencePostId: data.referencePostId ?? null,
   });
   return {
     manageToken: appt.manageToken,
@@ -132,7 +134,18 @@ export async function book(data) {
     unit: appt.unit.name,
     services: appt.items.map((i) => i.serviceName),
     totalPrice: appt.totalPrice,
+    reference: appt.referencePost ? { title: appt.referencePost.title } : null,
   };
+}
+
+export async function posts(query) {
+  const company = await publicCompany();
+  return publicPosts(company.id, query);
+}
+
+export async function post(id) {
+  const company = await publicCompany();
+  return publicPost(company.id, id);
 }
 
 export const manageInfo = (token) => getByManageToken(token);
