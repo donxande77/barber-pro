@@ -6,6 +6,7 @@ import { prisma } from '../src/db/prisma.js';
 import { env } from '../src/config/env.js';
 import { hashPassword } from '../src/utils/crypto.js';
 import { createAppointment } from '../src/services/appointment.service.js';
+import { createPlan, subscribe, generateCharges } from '../src/services/plan.service.js';
 import { createSale, closeSale, addPayment, addItem } from '../src/services/sale.service.js';
 import { createRule, createPayout, generatePeriodic } from '../src/services/compensation.service.js';
 import { createTransaction, createTransfer, createBill, payBill } from '../src/services/finance.service.js';
@@ -172,7 +173,29 @@ async function main() {
   await createPayout(ctx, { barberId: rafael.id, unitId: centro.id, accountId: acc(centro, 'Banco'), direction: 'PAYABLE_TO_BARBER', amount: '300.00' });
   await createPayout(ctx, { barberId: diego.id, unitId: jardins.id, accountId: acc(jardins, 'Caixa'), direction: 'RECEIVABLE_FROM_BARBER', amount: '400.00' });
 
-  // Agenda futura (pelos mesmos serviços do site)
+  // Planos mensais (valores fictícios da demonstração)
+  const planCorte = await createPlan(ctx, {
+    name: 'Plano Corte', description: 'Corte tradicional ou degradê: até 4 de cada por mês, em qualquer unidade.', price: '119.90', sortOrder: 1,
+    items: [{ serviceId: S.trad.id, quantity: 4 }, { serviceId: S.degrade.id, quantity: 4 }],
+  });
+  const planCombo = await createPlan(ctx, {
+    name: 'Plano Corte + Barba', description: 'Cabelo e barba sempre em dia: até 4 de cada por mês.', price: '189.90', highlight: true, sortOrder: 2,
+    items: [{ serviceId: S.trad.id, quantity: 4 }, { serviceId: S.degrade.id, quantity: 4 }, { serviceId: S.barba.id, quantity: 4 }],
+  });
+  const subs = [
+    [clients[0], planCombo, 20, true], [clients[1], planCorte, 12, true], [clients[2], planCombo, 3, false], [clients[3], planCorte, 40, true],
+  ];
+  for (const [client, p, daysAgo, paid] of subs) {
+    const sub = await subscribe(ctx, { clientId: client.id, planId: p.id, unitId: centro.id, startDate: day(-daysAgo), ...(paid ? { payment: { accountId: acc(centro, 'Caixa'), method: 'PIX' } } : {}) });
+    await prisma.financialTransaction.updateMany({ where: { charge: { subscriptionId: sub.id } }, data: { occurredAt: at(-daysAgo, '09:30') } });
+    await prisma.subscriptionCharge.updateMany({ where: { subscriptionId: sub.id, status: 'PAID' }, data: { paidAt: at(-daysAgo, '09:30') } });
+  }
+  await generateCharges(ctx, {}); // o assinante de 40 dias fica com a 2ª mensalidade vencida (aparece como bloqueado)
+  // Atendimento coberto pelo plano: o cliente não paga o serviço; o barbeiro comissiona sobre o preço de tabela
+  const covered = await createSale(ctx, { unitId: centro.id, clientId: clients[0].id, items: [{ kind: 'SERVICE', serviceId: S.degrade.id, barberId: rafael.id }, { kind: 'SERVICE', serviceId: S.barba.id, barberId: bruno.id }] });
+  await closeSale(ctx, covered.id);
+
+
   const future = [[1, '10:00', rafael, centro, [S.degrade.id]], [1, '11:00', bruno, centro, [S.combo.id]], [1, '14:00', rafael, centro, [S.trad.id]], [2, '15:00', diego, jardins, [S.infantil.id]], [0, '18:00', bruno, centro, [S.barba.id]]];
   for (const [i, [offset, time, barber, unit, serviceIds]] of future.entries()) {
     const startsAt = at(offset, time);

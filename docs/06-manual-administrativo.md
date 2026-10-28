@@ -1,6 +1,6 @@
 # 6. Manual administrativo
 
-Guia rápido para quem usa o painel (`/entrar`). O menu mostra só o que a sua função permite.
+Guia rápido para quem usa o painel. **Para entrar:** no site, toque em **Área da equipe** no topo da página (no celular é o ícone de pessoa ao lado de "Agendar"; também fica no menu ☰ e no rodapé) ou acesse direto o endereço do site seguido de `/entrar`. O menu do painel mostra só o que a sua função permite.
 
 ## Primeiros passos (proprietário)
 
@@ -11,8 +11,9 @@ Guia rápido para quem usa o painel (`/entrar`). O menu mostra só o que a sua f
 5. **Remuneração → Regras** → informe os percentuais e valores (ver abaixo).
 6. **Serviços do folder** → rode `npm run db:seed-servicos` (na pasta `backend`) para importar os 10 serviços do folder (Kone hindu, Sobrancelhas, Barboterapia, Camuflagem, Limpeza de pele, Hidratação, Selagem, Alinhamento capilar e as epilações) com descrição e imagem. Depois, em **Serviços e preços**, abra cada um, marque as unidades e informe preço e duração — sem preço o serviço não aparece no site.
 7. **Mural de cortes** → publique trabalhos da equipe (ver abaixo).
-8. **Site e aparência** → marca, cores, textos, fotos, galeria e ordem das seções. Salve o rascunho, use **Pré-visualizar** e depois **Publicar**.
-9. **Usuários** → crie gerentes e recepcionistas e escolha as unidades de cada um.
+8. **Planos mensais → Planos** → cadastre os planos de assinatura (ex.: Plano Corte, Plano Corte + Barba) com mensalidade, serviços e limite por mês (ver abaixo).
+9. **Site e aparência** → marca, cores, textos, fotos, galeria e ordem das seções. Salve o rascunho, use **Pré-visualizar** e depois **Publicar**.
+10. **Usuários** → crie gerentes e recepcionistas e escolha as unidades de cada um.
 
 ## Funções
 
@@ -74,6 +75,19 @@ O mural mostra no site os cortes feitos pela equipe. O cliente filtra por estilo
 - **Barbeiros** enviam os próprios cortes pelo painel; eles ficam **aguardando aprovação** até a gerência publicar. Se o barbeiro editar um corte publicado, ele volta para aprovação.
 - **Ocultar** tira o corte do site sem apagar. Cada corte mostra quantos agendamentos já vieram dele.
 - A seção aparece na página inicial e na página `/mural`; a posição é ajustada em Site e aparência → Seções.
+
+## Planos mensais (assinaturas)
+
+O cliente paga uma mensalidade e os serviços do plano saem **sem custo no atendimento**, até o limite do mês.
+
+- **Cadastrar planos** (proprietário): Planos mensais → Planos → Novo plano. Informe nome, mensalidade, descrição (aparece no site) e marque os serviços incluídos com o limite por mês (deixe vazio para ilimitado). Escolha se o plano vale em todas as unidades ou em uma só, se é "mais escolhido" no site e se o barbeiro **comissiona sobre o preço de tabela** dos serviços cobertos (padrão) ou não recebe comissão nesses serviços. Alterar um plano vale para novas assinaturas; quem já assinou mantém preço e serviços contratados.
+- **Assinar** (recepção, gerente, proprietário): Planos mensais → Assinantes → Nova assinatura. Escolha o cliente, o plano e, se ele já pagou, a forma e a conta. A mensalidade vence todo mês **no dia da contratação**.
+- **Mensalidades**: a aba lista as em aberto e vencidas. **Receber** lança a entrada no caixa como "Mensalidade de plano". Use **Gerar mensalidades do mês** para criar as dos assinantes ativos (é seguro repetir: não duplica). Recebimento lançado por engano é estornado em Financeiro → Movimentações; a mensalidade volta a ficar em aberto.
+- **No atendimento**: com o cliente identificado, os serviços do plano entram com valor R$ 0,00 e o selo do plano; o painel mostra o valor coberto. **Cobrar normalmente** tira o item do plano (ex.: o cliente prefere guardar o uso); **Usar plano** tenta aplicar de novo e explica quando não dá (limite do mês, plano de outra unidade, mensalidade atrasada).
+- **Atraso**: até 5 dias depois do vencimento o plano continua valendo; depois disso, os serviços são cobrados normalmente até a mensalidade ser paga. O assinante aparece como "Bloqueada por atraso".
+- **Pausar** interrompe a cobertura e as novas mensalidades; **Retomar** volta a cobrar a partir do mês atual. **Cancelar** pede motivo e cancela as mensalidades em aberto.
+- **No site**: a seção "Planos mensais" mostra os planos ativos com o botão **Quero assinar**, que abre o WhatsApp da unidade com a mensagem pronta. Não há pagamento online: a assinatura é feita na barbearia. Se o seu site foi publicado antes desta versão, inclua a seção em Site e aparência → Seções.
+- **Números**: Financeiro e Painel mostram mensalidades recebidas, assinantes ativos e mensalidades vencidas; os relatórios trazem também quantos serviços foram cobertos pelos planos e o valor de tabela correspondente.
 
 ## Avaliações
 

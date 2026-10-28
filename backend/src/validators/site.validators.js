@@ -12,7 +12,7 @@ const url = z
   .default(null)
   .transform((v) => v || null);
 
-export const SECTIONS = ['hero', 'about', 'services', 'lookbook', 'promotions', 'barbers', 'gallery', 'products', 'reviews', 'units', 'policies'];
+export const SECTIONS = ['hero', 'about', 'services', 'lookbook', 'plans', 'promotions', 'barbers', 'gallery', 'products', 'reviews', 'units', 'policies'];
 export const FONTS = ['Playfair Display', 'Cormorant Garamond', 'Bebas Neue', 'Oswald', 'DM Serif Display', 'Inter', 'Manrope', 'Lato'];
 
 export const siteConfigSchema = z.object({

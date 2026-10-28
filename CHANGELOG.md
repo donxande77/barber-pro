@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0] — 2026-10-28
+
+### Adicionado
+- Planos mensais (assinaturas): planos com mensalidade, serviços e limite por mês, válidos em todas as unidades ou em uma; assinaturas com cópia do plano na contratação; mensalidades com vencimento no dia da contratação, geração idempotente, recebimento, cancelamento e estorno pelo financeiro (a mensalidade volta a ficar em aberto).
+- Cobertura automática no atendimento: serviços do plano saem por R$ 0,00 com o valor coberto registrado; limite mensal, plano de outra unidade e atraso acima de 5 dias são verificados; "Cobrar normalmente" e "Usar plano" por item; comissão sobre o preço de tabela (configurável por plano).
+- Indicadores: mensalidades recebidas no financeiro, painel, consolidado e relatórios; assinantes ativos, mensalidades contratadas, vencidas e serviços cobertos.
+- Site: seção "Planos mensais" com "Quero assinar" pelo WhatsApp da unidade; link "Planos" no menu.
+- Painel: tela Planos mensais (Assinantes, Mensalidades, Planos) e planos na ficha do cliente.
+- 23 testes novos (191 no total: 159 backend, 32 frontend).
+
+### Alterado
+- "Área da equipe" fica visível no topo do site em todos os tamanhos de tela (ícone no celular), além do menu e do rodapé.
+
 ## [1.1.0] — 2026-10-28
 
 ### Adicionado

@@ -13,6 +13,7 @@ Plataforma de gestão para redes de barbearias com várias unidades: site públi
 - **Remuneração mista**: comissão por serviço/produto, fixo, aluguel de cadeira, combinações por modelo de vínculo, bônus e ajustes, vigência das regras, cópia da regra em cada venda, calculado × devido × pago × pendente, pagamentos aos profissionais.
 - **Financeiro**: contas, saldos, receitas/despesas, contas a pagar e receber, transferências (sem dupla contagem no consolidado), fechamento de caixa com conciliação.
 - **Dashboards** por função e **relatórios** individual, por unidade e consolidado (impressão A4, PDF, Excel, CSV).
+- **Planos mensais**: planos de corte e de corte + barba com mensalidade e limite por mês; os serviços do plano saem sem custo no atendimento, com controle de mensalidades, atraso (tolerância de 5 dias), pausa e cancelamento; comissão sobre o preço de tabela; seção no site com "Quero assinar" pelo WhatsApp.
 - **Mural de cortes**: a equipe publica cortes com antes e depois; o cliente filtra por estilo e toca em "Quero este corte" para agendar com os serviços, o barbeiro e a foto de referência já preenchidos. Barbeiros enviam os próprios cortes para aprovação.
 - **Serviços do folder** prontos para importar (Kone hindu, Sobrancelhas, Barboterapia, Camuflagem, Limpeza de pele, Hidratação, Selagem, Alinhamento capilar e epilações) com descrição e imagem: `npm run db:seed-servicos`.
 - **Personalização**: marca, logotipo, cores, fontes, banner, textos, galeria, redes, ordem das seções — rascunho, pré-visualização, publicação e restauração de versões.
@@ -58,15 +59,15 @@ npm install
 npm run dev                          # http://localhost:5173
 ```
 
-Entre em http://localhost:5173/entrar com o e-mail e a senha de `SEED_OWNER_*`.
+Entre em http://localhost:5173/entrar com o e-mail e a senha de `SEED_OWNER_*`. No site, o acesso da equipe é o botão **Área da equipe** no topo (ícone de pessoa no celular).
 
 **Quer ver com dados de exemplo?** `npm run db:seed-demo` cria uma empresa separada e claramente fictícia ("Barbearia Demonstração", login `dono@demo.barberpro` / `Demo2026senha`). Para o site mostrar essa empresa, coloque `PUBLIC_COMPANY_SLUG=barbearia-demonstracao` no `.env`. Não use em produção.
 
 ## Testes
 
 ```powershell
-cd backend;  npm test      # 140 testes de API e regras de negócio (recria o banco *_test)
-cd frontend; npm test      # 28 testes (validações, todas as telas e o fluxo do mural)
+cd backend;  npm test      # 159 testes de API e regras de negócio (recria o banco *_test)
+cd frontend; npm test      # 32 testes (validações, todas as telas, fluxo do mural e planos)
 npm run lint               # em cada pasta
 ```
 

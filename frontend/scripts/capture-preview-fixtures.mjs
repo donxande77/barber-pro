@@ -44,6 +44,9 @@ await get(owner, '/posts');
 await get(owner, '/posts?status=PENDING');
 await get(owner, '/posts?status=PUBLISHED');
 await get(owner, '/posts?status=HIDDEN');
+await get(null, '/public/plans');
+await get(owner, '/plans');
+await get(owner, '/plans?status=ACTIVE');
 
 const units = await get(owner, '/units');
 const unitId = units[0].id;
@@ -82,6 +85,11 @@ for (const u of units) {
   await get(owner, `/dashboard/manager${q({ unitId: u.id, from: monthStart, to: today })}`, `/dashboard/manager?unitId=${u.id}`);
   await get(owner, `/reports/unit${q({ unitId: u.id, from: monthStart, to: today })}`, `/reports/unit?unitId=${u.id}`);
   await get(owner, `/reviews?unitId=${u.id}&status=APPROVED`);
+  for (const status of ['ACTIVE', 'PAUSED', 'CANCELLED', '']) {
+    const subs = await get(owner, `/subscriptions${q({ unitId: u.id, status })}`);
+    for (const sub of subs ?? []) await get(owner, `/subscriptions/${sub.id}`);
+  }
+  for (const status of ['OPEN', 'PAID', 'CANCELLED', '']) await get(owner, `/subscription-charges${q({ unitId: u.id, status })}`);
 }
 await get(owner, '/finance/accounts');
 await get(owner, `/finance/transfers${q({ from: from30, to: today })}`, '/finance/transfers');

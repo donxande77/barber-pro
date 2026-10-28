@@ -33,9 +33,10 @@ function SummaryGrid({ s, available }) {
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Stat label="Faturamento (vendas fechadas)" value={brl(s.revenue)} hint={`${s.salesCount} vendas`} />
       <Stat label="Recebimentos de vendas" value={brl(s.receipts)} />
+      <Stat label="Mensalidades de planos" value={brl(s.subscriptionReceipts)} hint={s.plans ? `${s.plans.activeSubscribers} assinante(s) ativo(s)` : undefined} />
       <Stat label="Outras receitas" value={brl(s.otherIncome)} />
       <Stat label="Despesas" value={brl(s.expenses)} hint={`inclui ${brl(s.payouts)} a profissionais`} />
-      <Stat label="Resultado operacional" value={brl(s.operatingResult)} tone={Number(s.operatingResult) < 0 ? 'red' : 'gold'} hint="Recebimentos + receitas − despesas" />
+      <Stat label="Resultado operacional" value={brl(s.operatingResult)} tone={Number(s.operatingResult) < 0 ? 'red' : 'gold'} hint="Recebimentos + mensalidades + receitas − despesas" />
       <Stat label="Saldo disponível" value={brl(available)} />
       <Stat label="Obrigações com profissionais" value={brl(s.pendingToBarbers)} />
       <Stat label="Contas a pagar em aberto" value={brl(s.payablesOpen)} hint={`a receber ${brl(s.receivablesOpen)}`} />
@@ -448,6 +449,7 @@ function ConsolidatedTab() {
               { key: 'unit', label: 'Unidade', render: (u) => u.unit.name },
               { key: 'revenue', label: 'Faturamento', align: 'right', render: (u) => brl(u.revenue) },
               { key: 'receipts', label: 'Recebimentos', align: 'right', render: (u) => brl(u.receipts) },
+              { key: 'subscriptionReceipts', label: 'Mensalidades', align: 'right', render: (u) => brl(u.subscriptionReceipts) },
               { key: 'otherIncome', label: 'Outras receitas', align: 'right', render: (u) => brl(u.otherIncome) },
               { key: 'expenses', label: 'Despesas', align: 'right', render: (u) => brl(u.expenses) },
               { key: 'operatingResult', label: 'Resultado', align: 'right', render: (u) => brl(u.operatingResult) },
@@ -455,7 +457,7 @@ function ConsolidatedTab() {
             footer={
               <tr>
                 <td className="px-4 py-3">Total</td>
-                {['revenue', 'receipts', 'otherIncome', 'expenses', 'operatingResult'].map((k) => <td key={k} className="num px-4 py-3 text-right">{brl(data.total[k])}</td>)}
+                {['revenue', 'receipts', 'subscriptionReceipts', 'otherIncome', 'expenses', 'operatingResult'].map((k) => <td key={k} className="num px-4 py-3 text-right">{brl(data.total[k])}</td>)}
               </tr>
             }
           />

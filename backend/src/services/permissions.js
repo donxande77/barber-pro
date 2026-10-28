@@ -43,6 +43,8 @@ export const PERMISSIONS = {
   // Estoque e avaliações
   'stock:manage': ['OWNER', 'MANAGER'],
   'reviews:moderate': ['OWNER', 'MANAGER'],
+  'plans:manage': ['OWNER'], // criar e alterar planos mensais
+  'subscriptions:manage': ['OWNER', 'MANAGER', 'RECEPTIONIST'], // assinar, pausar, receber mensalidades
 
   // Relatórios e auditoria
   'reports:barber': ['OWNER', 'MANAGER', 'BARBER'], // barbeiro: somente o próprio

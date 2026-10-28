@@ -7,6 +7,7 @@ import { getPublishedConfig } from './site.service.js';
 import { effectivePrice } from './catalog.service.js';
 import { computeSlots, createAppointment, getByManageToken, cancelByManageToken } from './appointment.service.js';
 import { publicPosts, publicPost } from './post.service.js';
+import { publicPlans } from './plan.service.js';
 
 let cachedCompanyId = null;
 export async function publicCompany() {
@@ -141,6 +142,11 @@ export async function book(data) {
 export async function posts(query) {
   const company = await publicCompany();
   return publicPosts(company.id, query);
+}
+
+export async function plans({ unitId } = {}) {
+  const company = await publicCompany();
+  return publicPlans(company.id, unitId);
 }
 
 export async function post(id) {

@@ -6,9 +6,10 @@ import { D, dec, money, sum, toMoneyString } from '../utils/money.js';
 import { periodRange } from '../utils/time.js';
 import { effectivePrice, moveStock } from './catalog.service.js';
 import { accrueCommissions } from './compensation.service.js';
+import { findCoverage } from './plan.service.js';
 
 const include = {
-  items: { include: { barber: { select: { id: true, name: true } } }, orderBy: { id: 'asc' } },
+  items: { include: { barber: { select: { id: true, name: true } }, subscription: { select: { id: true, planSnapshot: true } } }, orderBy: { id: 'asc' } },
   payments: { include: { account: { select: { name: true } } }, orderBy: { paidAt: 'asc' } },
   client: { select: { id: true, name: true, phone: true } },
   unit: { select: { id: true, name: true, timezone: true } },
@@ -60,7 +61,7 @@ async function recalc(tx, saleId) {
 }
 
 /** Monta um item com preço e custo copiados do cadastro no momento (snapshot). */
-async function buildItem(tx, sale, { kind, serviceId, productId, barberId, quantity = 1, discount = '0' }) {
+async function buildItem(tx, sale, { kind, serviceId, productId, barberId, quantity = 1, discount = '0', useSubscription = true }) {
   if (barberId) {
     const link = await tx.barberUnit.findFirst({ where: { barberId, unitId: sale.unitId } });
     if (!link) throw badRequest('O profissional não é vinculado a esta unidade.');
@@ -84,7 +85,9 @@ async function buildItem(tx, sale, { kind, serviceId, productId, barberId, quant
   const gross = money(unitPrice.times(quantity));
   const disc = money(discount);
   if (disc.gt(gross)) throw badRequest('O desconto não pode ser maior que o valor do item.');
+  const cover = kind === 'SERVICE' && useSubscription ? await coverageFor(tx, sale, serviceId, quantity) : null;
   return {
+    ...(cover ? { subscriptionId: cover.subscriptionId, coveredAmount: toMoneyString(gross), discount: '0.00', total: '0.00' } : {}),
     kind,
     serviceId: kind === 'SERVICE' ? serviceId : null,
     productId: kind === 'PRODUCT' ? productId : null,
@@ -93,9 +96,14 @@ async function buildItem(tx, sale, { kind, serviceId, productId, barberId, quant
     quantity,
     unitPrice: toMoneyString(unitPrice),
     unitCost: unitCost ? toMoneyString(unitCost) : null,
-    discount: toMoneyString(disc),
-    total: toMoneyString(gross.minus(disc)),
+    ...(cover ? {} : { discount: toMoneyString(disc), total: toMoneyString(gross.minus(disc)) }),
   };
+}
+
+/** Assinatura que cobre o serviço (ou null). O item coberto fica com total zero e guarda o valor coberto. */
+async function coverageFor(tx, sale, serviceId, quantity, excludeItemId) {
+  const r = await findCoverage(tx, { companyId: sale.companyId, clientId: sale.clientId, unitId: sale.unitId, serviceId, quantity, excludeItemId });
+  return r.subscriptionId ? r : null;
 }
 
 /** Abre uma venda avulsa ou o atendimento de um agendamento (itens vêm do agendamento). */
@@ -120,10 +128,12 @@ export async function createSale(ctx, { unitId, clientId, appointmentId, items =
       const ctxSale = { ...sale, companyId: unit.companyId };
       // Atendimento: mantém o preço combinado no agendamento.
       for (const ai of appt?.items ?? []) {
+        const cover = await coverageFor(tx, ctxSale, ai.serviceId, 1);
         await tx.saleItem.create({
           data: {
             saleId: sale.id, kind: 'SERVICE', serviceId: ai.serviceId, barberId: appt.barberId, description: ai.serviceName,
-            quantity: 1, unitPrice: ai.price, discount: '0', total: ai.price,
+            quantity: 1, unitPrice: ai.price, discount: '0',
+            ...(cover ? { total: '0.00', subscriptionId: cover.subscriptionId, coveredAmount: ai.price } : { total: ai.price }),
           },
         });
       }
@@ -149,7 +159,7 @@ export async function addItem(ctx, saleId, data) {
   return getSale(ctx, saleId);
 }
 
-export async function updateItem(ctx, saleId, itemId, { discount, barberId, quantity }) {
+export async function updateItem(ctx, saleId, itemId, { discount, barberId, quantity, covered }) {
   const sale = await loadSale(ctx, saleId);
   if (sale.status !== 'OPEN') throw badRequest('Só é possível alterar vendas abertas.');
   const item = sale.items.find((i) => i.id === itemId);
@@ -162,10 +172,18 @@ export async function updateItem(ctx, saleId, itemId, { discount, barberId, quan
   const gross = money(dec(item.unitPrice).times(q));
   const disc = money(discount ?? item.discount);
   if (disc.gt(gross)) throw badRequest('O desconto não pode ser maior que o valor do item.');
+  const wantCover = covered ?? !!item.subscriptionId;
+  if (wantCover && item.kind !== 'SERVICE') throw badRequest('Planos cobrem apenas serviços.');
   await prisma.$transaction(async (tx) => {
+    let coverData = { subscriptionId: null, coveredAmount: null, discount: toMoneyString(disc), total: toMoneyString(gross.minus(disc)) };
+    if (wantCover) {
+      const r = await findCoverage(tx, { companyId: ctx.user.companyId, clientId: sale.clientId, unitId: sale.unitId, serviceId: item.serviceId, quantity: q, excludeItemId: itemId });
+      if (!r.subscriptionId) throw badRequest(r.reason);
+      coverData = { subscriptionId: r.subscriptionId, coveredAmount: toMoneyString(gross), discount: '0.00', total: '0.00' };
+    }
     await tx.saleItem.update({
       where: { id: itemId },
-      data: { quantity: q, discount: toMoneyString(disc), total: toMoneyString(gross.minus(disc)), ...(barberId ? { barberId } : {}) },
+      data: { quantity: q, ...coverData, ...(barberId ? { barberId } : {}) },
     });
     await recalc(tx, saleId);
   });
@@ -193,7 +211,7 @@ export async function closeSale(ctx, saleId) {
     await tx.$queryRaw`SELECT id FROM "Sale" WHERE id = ${saleId}::uuid FOR UPDATE`;
     const sale = await tx.sale.findFirst({
       where: { id: saleId, unitId: { in: ctx.unitIds } },
-      include: { items: { include: { service: true, product: true } } },
+      include: { items: { include: { service: true, product: true, subscription: { select: { planSnapshot: true } } } } },
     });
     if (!sale) throw notFound('Venda não encontrada.');
     if (sale.status !== 'OPEN') throw badRequest('Esta venda já foi fechada ou cancelada.');

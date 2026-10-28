@@ -23,6 +23,7 @@ export function SiteProvider({ children }) {
   const [isPreview, setIsPreview] = useState(false);
   const [unitId, setUnitIdState] = useState(readUnit);
   const [catalog, setCatalog] = useState({ unitId: null, data: null, loading: false, error: null });
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     let alive = true;
@@ -41,6 +42,7 @@ export function SiteProvider({ children }) {
           }
         }
         if (!alive) return;
+        api.get('/public/plans').then((p) => alive && setPlans(p)).catch(() => {}); // planos são opcionais no site
         applyTheme(data.config);
         document.title = data.config.brand.name;
         setSite(data);
@@ -87,8 +89,10 @@ export function SiteProvider({ children }) {
       unitId: effectiveUnitId,
       setUnitId,
       catalog: catalog.unitId === effectiveUnitId ? catalog : { data: null, loading: !!effectiveUnitId, error: null },
+      // Planos válidos na unidade escolhida (ou todos, antes de escolher)
+      plans: plans.filter((p) => !p.unit || !effectiveUnitId || p.unit.id === effectiveUnitId),
     }),
-    [site, error, isPreview, units, effectiveUnitId, setUnitId, catalog],
+    [site, error, isPreview, units, effectiveUnitId, setUnitId, catalog, plans],
   );
   return <SiteContext.Provider value={value}>{children}</SiteContext.Provider>;
 }

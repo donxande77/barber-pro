@@ -114,6 +114,20 @@ function ClientDetail({ id, onClose, onEdit, onChanged }) {
               </ConfirmButton>
             )}
           </div>
+          {data.subscriptions?.length > 0 && (
+            <>
+              <h3 className="font-heading text-lg">Planos mensais</h3>
+              <ul className="divide-y divide-white/5">
+                {data.subscriptions.map((s) => (
+                  <li key={s.id} className="flex flex-wrap items-center gap-2 py-2">
+                    <span className="flex-1">{s.planSnapshot.name} <span className="text-muted">· desde {dateBR(s.startDate, 'UTC')} · {s.unit.name}</span></span>
+                    <span className="num">{brl(s.price)}/mês</span>
+                    <Pill tone={STATUS_TONE[s.status]}>{LABELS.subscription[s.status]}</Pill>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <h3 className="font-heading text-lg">Histórico</h3>
           {!data.appointments.length && <p className="text-muted">Sem atendimentos nas suas unidades.</p>}
           <ul className="divide-y divide-white/5">

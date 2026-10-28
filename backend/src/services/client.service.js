@@ -28,7 +28,12 @@ export async function getClient(ctx, id) {
     take: 30,
     include: { items: true, barber: { select: { name: true } }, unit: { select: { name: true } } },
   });
-  return { ...client, appointments };
+  const subscriptions = await prisma.subscription.findMany({
+    where: { clientId: id, unitId: { in: ctx.unitIds } },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, status: true, price: true, startDate: true, planSnapshot: true, unit: { select: { name: true } } },
+  });
+  return { ...client, appointments, subscriptions };
 }
 
 const toData = (d) => ({ ...d, birthDate: d.birthDate ? new Date(`${d.birthDate}T00:00:00Z`) : d.birthDate });

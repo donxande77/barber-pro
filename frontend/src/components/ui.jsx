@@ -64,7 +64,7 @@ export function Pill({ tone = 'gray', children }) {
 export const STATUS_TONE = {
   SCHEDULED: 'blue', CONFIRMED: 'gold', CHECKED_IN: 'amber', COMPLETED: 'green', CANCELLED: 'red', NO_SHOW: 'gray',
   OPEN: 'amber', CLOSED: 'green', PAID: 'green', PARTIAL: 'amber', UNPAID: 'red', SETTLED: 'green',
-  PENDING: 'amber', APPROVED: 'green', REJECTED: 'red', ACTIVE: 'green', INACTIVE: 'gray', ON_LEAVE: 'amber',
+  PENDING: 'amber', APPROVED: 'green', REJECTED: 'red', ACTIVE: 'green', INACTIVE: 'gray', ON_LEAVE: 'amber', PAUSED: 'gray', OK: 'green', OVERDUE: 'amber', BLOCKED: 'red',
 };
 
 /** Painel modal: folha inferior no celular, janela centralizada no desktop. */

@@ -32,6 +32,7 @@ Base: `/api`. JSON em UTF-8. Valores monetários trafegam como **string decimal*
 | GET | `/public/appointments/:token` | Consultar agendamento pelo link do cliente |
 | POST | `/public/appointments/:token/cancel` | Cancelar (respeita o prazo da unidade) |
 | GET | `/public/posts?unitId&tag&barberId` | Mural: cortes publicados, estilos disponíveis e valor estimado na unidade |
+| GET | `/public/plans?unitId` | Planos mensais ativos (nome, mensalidade, serviços e limites) |
 | GET | `/public/posts/:id` | Um corte do mural (usado no "Quero este corte") |
 | GET / POST | `/public/reviews/:token` | Ver / enviar avaliação de um atendimento concluído (`{ rating 1–5, comment? }`) |
 
@@ -68,6 +69,22 @@ Base: `/api`. JSON em UTF-8. Valores monetários trafegam como **string decimal*
 | GET | `/posts?status&unitId` | `mural:submit` (barbeiro vê só os próprios) |
 | POST | `/posts` | `mural:submit` — `{ title, imageUrls[1–4], tags[], serviceIds[], barberId?, unitId?, description?, status?, featured? }`; barbeiro sempre cria como `PENDING` |
 | PATCH / DELETE | `/posts/:id` | `mural:submit` — publicar, ocultar e destacar só com `mural:manage` |
+
+## Planos mensais e assinaturas
+
+| Método | Rota | Permissão |
+|---|---|---|
+| GET | `/plans?status` | `subscriptions:manage` |
+| POST / PATCH | `/plans[/:id]` | `plans:manage` — `{ name, price, items: [{ serviceId, quantity? (nulo = ilimitado) }], unitId?, description?, status?, highlight?, commissionOnCovered?, sortOrder? }` |
+| GET / POST | `/subscriptions` | `subscriptions:manage` — lista (`status, unitId, clientId, search`) com uso do mês e `paymentStatus` (`OK`, `OVERDUE`, `BLOCKED`); cria `{ clientId, planId, unitId, startDate?, notes?, payment?: { accountId, method } }` |
+| GET | `/subscriptions/:id` | `subscriptions:manage` |
+| POST | `/subscriptions/:id/status` | `subscriptions:manage` — `{ action: pause \| resume \| cancel, reason? }` (cancelar exige motivo) |
+| GET | `/subscription-charges?unitId&status&from&to` | `subscriptions:manage` |
+| POST | `/subscription-charges/generate` | `subscriptions:manage` — `{ unitId? }` gera as mensalidades que faltam (idempotente) |
+| POST | `/subscription-charges/:id/pay` | `subscriptions:manage` — `{ accountId, method }` → movimentação `SUBSCRIPTION_PAYMENT` |
+| POST | `/subscription-charges/:id/cancel` | `subscriptions:manage` — `{ reason }` |
+
+Nas vendas, itens de serviço de clientes com plano são cobertos automaticamente (`subscriptionId`, `coveredAmount`, `total = 0`). `POST /sales/:id/items` aceita `useSubscription: false`; `PATCH /sales/:id/items/:itemId` aceita `covered: true|false`.
 
 ## Cadastros
 
@@ -139,7 +156,7 @@ Permissão: `sales:manage` (recepção, gerente, proprietário).
 | GET / POST | `/finance/bills`, `POST /finance/bills/:id/pay`, `POST /finance/bills/:id/cancel` | contas a pagar e receber |
 | GET / POST | `/finance/transfers`, `POST /finance/transfers/:id/reverse` | entre unidades: só proprietário |
 | GET / POST | `/finance/closings` | fechamento e conciliação de caixa |
-| GET | `/finance/summary?unitId&from&to&method?` | `finance:unit:read` |
+| GET | `/finance/summary?unitId&from&to&method?` | `finance:unit:read` — inclui `subscriptionReceipts` e `plans` (assinantes, mensalidades contratadas, vencidas, serviços cobertos) |
 | GET | `/finance/consolidated?from&to&method?` | `finance:consolidated:read` |
 | GET | `/dashboard/owner`, `/dashboard/manager`, `/dashboard/barber` | por função |
 | GET | `/reports/barber`, `/reports/unit`, `/reports/consolidated` + `&format=json|csv|xlsx|pdf` | `reports:*` |

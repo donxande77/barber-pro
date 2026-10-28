@@ -4,6 +4,7 @@ import * as pub from '../services/public.service.js';
 export const publicCtl = {
   site: handle(() => pub.site()),
   posts: handle((_ctx, v) => pub.posts(v.query)),
+  plans: handle((_ctx, v) => pub.plans(v.query)),
   post: handle((_ctx, v) => pub.post(v.params.id)),
   catalog: handle((_ctx, v) => pub.unitCatalog(v.params.unitId)),
   availability: handle((_ctx, v) => pub.availability(v.query)),

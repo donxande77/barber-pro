@@ -4,6 +4,7 @@ import { audit } from '../utils/audit.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { D, dec, money, percentOf, sum, toMoneyString } from '../utils/money.js';
 import { periodRange } from '../utils/time.js';
+import { commissionBase } from './plan.service.js';
 
 /**
  * Quais tipos de regra cada modelo de remuneração aceita.
@@ -165,7 +166,7 @@ export async function accrueCommissions(tx, sale, ctx) {
       at: sale.closedAt,
       itemDefaultPct: item.kind === 'SERVICE' ? item.service?.commissionPct : item.product?.commissionPct,
     });
-    const amount = percentOf(item.total, c.pct);
+    const amount = percentOf(commissionBase(item, item.subscription), c.pct);
     await tx.saleItem.update({
       where: { id: item.id },
       data: { commissionRuleId: c.ruleId, commissionPct: c.pct.toFixed(2), commissionAmount: toMoneyString(amount), ruleSnapshot: c.snapshot },

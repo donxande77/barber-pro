@@ -5,6 +5,7 @@ import { badRequest, forbidden, notFound } from '../utils/errors.js';
 import { D, dec, money, sum, toMoneyString } from '../utils/money.js';
 import { periodRange } from '../utils/time.js';
 import { reversePayment } from './sale.service.js';
+import { reopenChargeTx, subscriptionStats } from './plan.service.js';
 
 const assertUnit = (ctx, unitId) => {
   if (!ctx.unitIds.includes(unitId)) throw forbidden('Unidade fora do seu acesso.');
@@ -126,6 +127,7 @@ export async function reverseTransaction(ctx, id, { reason }) {
 
   try {
     return await prisma.$transaction(async (tx) => {
+      if (t.chargeId) await reopenChargeTx(tx, t.chargeId); // mensalidade volta a ficar em aberto
       if (t.billId) {
         const bill = await tx.bill.findUnique({ where: { id: t.billId } });
         const paid = D.max(dec(bill.paidAmount).minus(dec(t.amount)), 0);
@@ -134,7 +136,7 @@ export async function reverseTransaction(ctx, id, { reason }) {
       const rev = await tx.financialTransaction.create({
         data: {
           unitId: t.unitId, accountId: t.accountId, direction: t.direction === 'IN' ? 'OUT' : 'IN', kind: 'REVERSAL',
-          amount: t.amount, reversalOfId: t.id, billId: t.billId, categoryId: t.categoryId,
+          amount: t.amount, reversalOfId: t.id, billId: t.billId, chargeId: t.chargeId, categoryId: t.categoryId,
           description: `Estorno: ${reason}`, createdById: ctx.user.id,
         },
         include: txInclude,
@@ -374,24 +376,28 @@ export async function unitSummary(unitIds, { start, end }, filters = {}) {
   const open = (list) => sum(list.map((b) => dec(b.amount).minus(dec(b.paidAmount ?? b.settledAmount))));
 
   const receipts = n('SALE_PAYMENT');
+  const subscriptionReceipts = n('SUBSCRIPTION_PAYMENT');
   const otherIncome = n('INCOME').plus(n('BILL_RECEIPT')).plus(n('CHAIR_RENT_RECEIPT'));
   const expenses = n('EXPENSE').plus(n('BILL_PAYMENT')).plus(n('BARBER_PAYOUT')).negated();
   const adjustments = n('ADJUSTMENT');
   const s = (v) => money(v).toFixed(2);
+  const plans = await subscriptionStats(unitIds, { start, end });
   return {
     revenue: s(dec(sales.revenue)), // faturamento: vendas fechadas (competência)
     salesCount: Number(sales.count),
     receipts: s(receipts), // recebimentos de vendas (caixa)
+    subscriptionReceipts: s(subscriptionReceipts), // mensalidades de planos recebidas (caixa)
     otherIncome: s(otherIncome),
     expenses: s(expenses),
     payouts: s(n('BARBER_PAYOUT').negated()),
     adjustments: s(adjustments),
-    operatingResult: s(receipts.plus(otherIncome).minus(expenses)), // resultado operacional de caixa
+    operatingResult: s(receipts.plus(subscriptionReceipts).plus(otherIncome).minus(expenses)), // resultado operacional de caixa
     cogs: s(dec(costs.cogs)),
     commissionsAccrued: s(dec(costs.commissions)),
     pendingToBarbers: s(open(pendingObligations)),
     payablesOpen: s(open(openBills.filter((b) => b.kind === 'PAYABLE'))),
     receivablesOpen: s(open(openBills.filter((b) => b.kind === 'RECEIVABLE'))),
+    plans, // assinantes ativos, receita recorrente contratada, mensalidades vencidas, serviços cobertos
   };
 }
 

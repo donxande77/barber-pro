@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock, MapPin, Phone, MessageCircle, Star, Camera, Tag } from 'lucide-react';
 import { useSite } from './SiteContext.jsx';
 import { MuralSection } from './Mural.jsx';
+import { PlansSection } from './Plans.jsx';
 import { brl, phoneBR, waLink, WEEKDAYS, minToHHMM, dateBR } from '../lib/format.js';
 
 /** Seletor de unidade: o visitante escolhe antes de ver serviços, profissionais e horários. */
@@ -347,6 +348,7 @@ const SECTIONS = {
     </Wrap>
   ),
   lookbook: () => <MuralSection />,
+  plans: () => <PlansSection />,
   promotions: () => <Promotions />,
   barbers: () => <Wrap id="barbeiros" title="Barbeiros"><Barbers /></Wrap>,
   gallery: () => <GalleryWrap />,

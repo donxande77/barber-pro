@@ -8,7 +8,7 @@ import { draftBody, uploadBody } from '../validators/site.validators.js';
 import * as cv from '../validators/catalog.validators.js';
 import * as ov from '../validators/ops.validators.js';
 import {
-  company, unitCtl, siteCtl, clientCtl, barberCtl, catalogCtl, agendaCtl, saleCtl, compCtl, finCtl, dashCtl, reviewCtl, postCtl,
+  company, unitCtl, siteCtl, clientCtl, barberCtl, catalogCtl, agendaCtl, saleCtl, compCtl, finCtl, dashCtl, reviewCtl, postCtl, planCtl,
 } from '../controllers/admin.controller.js';
 import { reportCtl } from '../controllers/report.controller.js';
 
@@ -34,6 +34,19 @@ admin.put('/site/draft', perm('site:manage'), V({ body: draftBody }), siteCtl.sa
 admin.delete('/site/draft', perm('site:manage'), siteCtl.discardDraft);
 admin.post('/site/publish', perm('site:manage'), siteCtl.publish);
 admin.post('/uploads', perm('mural:submit'), V({ body: uploadBody }), siteCtl.upload);
+
+// Planos mensais e assinaturas
+admin.get('/plans', perm('subscriptions:manage'), V({ query: ov.planListQuery }), planCtl.list);
+admin.post('/plans', perm('plans:manage'), V({ body: ov.planBody }), planCtl.create);
+admin.patch('/plans/:id', perm('plans:manage'), V({ params: idParams, body: partialNoDefaults(ov.planBody) }), planCtl.update);
+admin.get('/subscriptions', perm('subscriptions:manage'), V({ query: ov.subscriptionListQuery }), planCtl.subscriptions);
+admin.post('/subscriptions', perm('subscriptions:manage'), V({ body: ov.subscribeBody }), planCtl.subscribe);
+admin.get('/subscriptions/:id', perm('subscriptions:manage'), V({ params: idParams }), planCtl.subscription);
+admin.post('/subscriptions/:id/status', perm('subscriptions:manage'), V({ params: idParams, body: ov.subscriptionStatusBody }), planCtl.setStatus);
+admin.get('/subscription-charges', perm('subscriptions:manage'), V({ query: ov.chargeListQuery }), planCtl.charges);
+admin.post('/subscription-charges/generate', perm('subscriptions:manage'), V({ body: ov.generateChargesBody }), planCtl.generate);
+admin.post('/subscription-charges/:id/pay', perm('subscriptions:manage'), V({ params: idParams, body: ov.chargePayBody }), planCtl.pay);
+admin.post('/subscription-charges/:id/cancel', perm('subscriptions:manage'), V({ params: idParams, body: ov.reasonBody }), planCtl.cancelCharge);
 
 // Mural de cortes (barbeiro envia os próprios; gestão publica)
 admin.get('/posts', perm('mural:submit'), V({ query: ov.postListQuery }), postCtl.list);

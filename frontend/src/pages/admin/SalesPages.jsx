@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Plus, Trash2, Loader2, Copy, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Loader2, Copy, ArrowLeft, BadgeCheck } from 'lucide-react';
 import { useUnit } from '../../auth/UnitContext.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { api } from '../../lib/api.js';
@@ -122,8 +122,20 @@ export function SaleDetailPage() {
                     {Number(i.discount) > 0 ? ` · desconto ${brl(i.discount)}` : ''}
                     {i.commissionAmount != null && ` · comissão ${brl(i.commissionAmount)} (${Number(i.commissionPct).toLocaleString('pt-BR')}%)`}
                   </p>
+                  {i.subscriptionId && (
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                      <Pill tone="gold"><BadgeCheck className="mr-1 h-3 w-3" />{i.subscription?.planSnapshot?.name ?? 'Plano mensal'}</Pill>
+                      <span className="text-muted">{brl(i.coveredAmount)} coberto pelo plano</span>
+                    </p>
+                  )}
                 </div>
-                {open && <DiscountEditor item={i} onSave={(discount) => run(() => api.patch(`/sales/${id}/items/${i.id}`, { discount }))} />}
+                {open && i.kind === 'SERVICE' && i.subscriptionId && (
+                  <button className="text-xs text-muted hover:text-gold" disabled={busy} onClick={() => run(() => api.patch(`/sales/${id}/items/${i.id}`, { covered: false }))}>Cobrar normalmente</button>
+                )}
+                {open && i.kind === 'SERVICE' && !i.subscriptionId && sale.client && (
+                  <button className="text-xs text-muted hover:text-gold" disabled={busy} onClick={() => run(() => api.patch(`/sales/${id}/items/${i.id}`, { covered: true }))}>Usar plano</button>
+                )}
+                {open && !i.subscriptionId && <DiscountEditor item={i} onSave={(discount) => run(() => api.patch(`/sales/${id}/items/${i.id}`, { discount }))} />}
                 <span className="num w-24 text-right">{brl(i.total)}</span>
                 {open && (
                   <button className="text-muted hover:text-red-300" aria-label={`Remover ${i.description}`} onClick={() => run(() => api.delete(`/sales/${id}/items/${i.id}`))}>

@@ -74,8 +74,15 @@ function Kpis({ s, available }) {
       <Stat label="Resultado operacional" value={brl(s.operatingResult)} tone={Number(s.operatingResult) < 0 ? 'red' : 'gold'} />
       <Stat label="Saldo disponível" value={brl(available)} />
       <Stat label="Pendente com profissionais" value={brl(s.pendingToBarbers)} />
-      <Stat label="Contas a pagar" value={brl(s.payablesOpen)} />
-      <Stat label="Contas a receber" value={brl(s.receivablesOpen)} />
+      <Stat label="Contas a pagar" value={brl(s.payablesOpen)} hint={`a receber ${brl(s.receivablesOpen)}`} />
+      {s.plans && (
+        <Stat
+          label="Planos mensais"
+          value={`${s.plans.activeSubscribers} assinante(s)`}
+          hint={`${brl(s.subscriptionReceipts)} recebido no período · ${s.plans.overdueCharges} mensalidade(s) vencida(s)`}
+          tone={s.plans.overdueCharges ? 'red' : undefined}
+        />
+      )}
     </div>
   );
 }

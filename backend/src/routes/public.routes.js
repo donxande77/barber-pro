@@ -20,6 +20,7 @@ const limit = (max) =>
 
 publicRoutes.get('/site', publicCtl.site);
 publicRoutes.get('/posts', limit(300), V({ query: ov.publicPostsQuery }), publicCtl.posts);
+publicRoutes.get('/plans', limit(300), V({ query: ov.publicPlansQuery }), publicCtl.plans);
 publicRoutes.get('/posts/:id', limit(300), V({ params: idParams }), publicCtl.post);
 publicRoutes.get('/units/:unitId/catalog', V({ params: unitParams }), publicCtl.catalog);
 publicRoutes.get('/availability', limit(300), V({ query: ov.availabilityQuery }), publicCtl.availability);

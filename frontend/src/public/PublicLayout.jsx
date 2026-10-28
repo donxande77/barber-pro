@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X, MapPin, Phone, Camera, Globe, MessageCircle } from 'lucide-react';
+import { Menu, X, MapPin, Phone, UserRound, Camera, Globe, MessageCircle } from 'lucide-react';
 import { useSite } from './SiteContext.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { phoneBR, waLink } from '../lib/format.js';
@@ -11,7 +11,7 @@ export function BrandMark({ config, className = 'h-9 w-9' }) {
 }
 
 export default function PublicLayout() {
-  const { config, error, isPreview, unit, units } = useSite();
+  const { config, error, isPreview, unit, units, plans } = useSite();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const onHome = pathname === '/';
@@ -33,6 +33,7 @@ export default function PublicLayout() {
   const anchor = (id) => (onHome ? `#${id}` : `/#${id}`);
   const links = [
     ['Serviços', 'servicos'],
+    ...(config.sections.includes('plans') && plans.length ? [['Planos', 'planos']] : []),
     ...(config.sections.includes('lookbook') ? [['Mural de cortes', 'mural']] : []),
     ['Barbeiros', 'barbeiros'],
     ...(config.gallery.length ? [['Galeria', 'galeria']] : []),
@@ -58,13 +59,19 @@ export default function PublicLayout() {
               id === 'mural' ? <Link key={id} to="/mural" className="hover:text-gold">{label}</Link> : <a key={id} href={anchor(id)} className="hover:text-gold">{label}</a>
             ))}
           </nav>
-          <Link to="/agendar" className="btn-gold ml-auto md:ml-0">{config.hero.ctaLabel || 'Agendar'}</Link>
+          <Link to="/entrar" className="btn-ghost ml-auto px-2.5 md:ml-0 md:px-3" aria-label="Área da equipe" title="Área da equipe">
+            <UserRound className="h-4 w-4" /> <span className="hidden sm:inline">Área da equipe</span>
+          </Link>
+          <Link to="/agendar" className="btn-gold">{config.hero.ctaLabel || 'Agendar'}</Link>
           <button className="btn-ghost px-2.5 md:hidden" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
         {open && (
           <nav aria-label="Menu" className="border-t border-white/5 px-4 pb-4 md:hidden">
+            <Link to="/entrar" onClick={() => setOpen(false)} className="mt-3 flex items-center gap-2 rounded-lg border border-white/10 px-3 py-3 text-sm">
+              <UserRound className="h-4 w-4 text-gold" /> Área da equipe (funcionários)
+            </Link>
             {links.map(([label, id]) => (
               id === 'mural' ? (
                 <Link key={id} to="/mural" onClick={() => setOpen(false)} className="block py-3 text-lg font-heading">{label}</Link>

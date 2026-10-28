@@ -37,6 +37,7 @@ const cases = [
   ['/painel/agenda', /Agenda/],
   ['/painel/atendimentos', /Atendimentos e vendas/],
   ['/painel/clientes', /Clientes/],
+  ['/painel/planos', /Planos mensais/],
   ['/painel/barbeiros', /Barbeiros/],
   ['/painel/servicos', /Serviços e preços/],
   ['/painel/produtos', /Produtos e estoque/],
@@ -104,6 +105,36 @@ describe('mural de cortes', () => {
     const pressed = screen.getAllByRole('button', { pressed: true }).map((b) => b.textContent);
     expect(pressed.join(' ')).toMatch(/Alinhamento capilar/);
     expect(pressed.join(' ')).toMatch(/Degradê/);
+    cleanup();
+  });
+});
+
+describe('planos mensais', () => {
+  it('site mostra os planos com o botão de assinar pelo WhatsApp e o acesso da equipe no topo', async () => {
+    renderAt('/');
+    await waitFor(() => expect(screen.getAllByText(/Plano Corte \+ Barba/).length).toBeGreaterThan(0), { timeout: 4000 });
+    const subscribe = screen.getAllByRole('link', { name: /Quero assinar/ });
+    expect(subscribe[0].getAttribute('href')).toMatch(/^https:\/\/wa\.me\/\d+\?text=/);
+    expect(screen.getAllByRole('link', { name: /Área da equipe/ })[0].getAttribute('href')).toBe('/entrar');
+    cleanup();
+  });
+  it('painel lista assinantes, mensalidades e planos', async () => {
+    renderAt('/painel/planos');
+    await waitFor(() => expect(screen.getAllByText(/Assinantes ativos/).length).toBeGreaterThan(0), { timeout: 4000 });
+    expect(document.body.textContent).toMatch(/Bloqueada por atraso/);
+    fireEvent.click(screen.getByRole('tab', { name: 'Mensalidades' }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Receber' }).length).toBeGreaterThan(0), { timeout: 4000 });
+    fireEvent.click(screen.getByRole('tab', { name: 'Planos' }));
+    await waitFor(() => expect(screen.getAllByText(/Plano Corte \+ Barba/).length).toBeGreaterThan(0), { timeout: 4000 });
+    expect(screen.queryAllByRole('alert')).toEqual([]);
+    cleanup();
+  });
+  it('atendimento coberto mostra o plano e a opção de cobrar normalmente', async () => {
+    const { default: fx } = await import('../preview/fixtures.json');
+    const key = Object.keys(fx.routes).find((k) => /^\/sales\/[0-9a-f-]{36}$/.test(k) && fx.routes[k].items.some((i) => i.subscriptionId));
+    expect(key).toBeTruthy();
+    renderAt(key.replace('/sales/', '/painel/atendimentos/'));
+    await waitFor(() => expect(screen.getAllByText(/coberto pelo plano/).length).toBeGreaterThan(0), { timeout: 4000 });
     cleanup();
   });
 });

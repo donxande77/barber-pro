@@ -38,6 +38,7 @@ Testes em `backend/src/tests` (Vitest + Supertest contra PostgreSQL de teste iso
 | LGPD (consentimento, anonimização) | `agenda.test.js`, `site-public.test.js` |
 | Mural de cortes (aprovação, isolamento, referência no agendamento, preço estimado) | `integration/mural.test.js`, `smoke.test.jsx` (fluxo "Quero este corte") |
 | Importação dos serviços do folder | `integration/mural.test.js` |
+| Planos mensais (períodos, permissões, mensalidades, estorno, limite, tolerância, cobertura no atendimento, comissão, indicadores) | `integration/plans.test.js`, `smoke.test.jsx` (site e painel de planos) |
 | Todas as telas abrem sem erro | `frontend/src/tests/smoke.test.jsx` |
 
 ## Limitações conhecidas
@@ -45,7 +46,9 @@ Testes em `backend/src/tests` (Vitest + Supertest contra PostgreSQL de teste iso
 - As imagens dos serviços do folder foram recortadas de uma foto do folder impresso: servem para começar, mas vale trocar pelos arquivos originais em boa resolução (Serviços e preços → abrir o serviço → Trocar imagem).
 - Imagens: o sistema não vem com fotos de banco de imagens. Até o proprietário enviar fotos (logotipo, banner, barbeiros, galeria), o site usa monogramas e a ilustração do poste de barbeiro.
 - Envio automático de WhatsApp/SMS/e-mail não está incluído: os links (agendamento, avaliação) são copiados e enviados pela equipe; o site tem links diretos de WhatsApp.
-- Pagamento online e emissão de nota fiscal estão fora do escopo.
+- Pagamento online e emissão de nota fiscal estão fora do escopo. Nos planos mensais, a mensalidade é recebida na barbearia (sem cobrança recorrente automática no cartão); o botão do site abre o WhatsApp da unidade.
+- Mensalidades não são proporcionais: a assinatura começa no dia da contratação e vence nesse dia todo mês (em meses mais curtos, no último dia). A tolerância de atraso é fixa em 5 dias.
+- As mensalidades do mês são geradas ao abrir um atendimento do assinante ou pelo botão "Gerar mensalidades do mês"; não há tarefa agendada automática.
 - Fixo e aluguel mensais não são proporcionais a dias trabalhados: a regra vigente em qualquer dia do mês gera o valor do mês (semanal = por segunda-feira do mês). Ajustes podem ser lançados manualmente.
 - O limite de tentativas usa memória do processo; para rodar várias instâncias, troque o armazenamento por Redis.
 - A migração inicial foi gerada a partir do schema seguindo o padrão do Prisma, pois o ambiente de construção não acessava o servidor de binários do Prisma. A estrutura foi conferida contra o schema (diferença apenas na ordem de colunas). Na primeira execução local, `npx prisma migrate dev` confirma o estado e, se apontar diferença de formato, gera sozinho uma migração de ajuste.

@@ -30,6 +30,7 @@ const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx'));
 const ReviewsPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.ReviewsPage })));
 const AuditPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.AuditPage })));
 const MuralAdminPage = lazy(() => import('./pages/admin/MuralAdminPage.jsx'));
+const PlansPage = lazy(() => import('./pages/admin/PlansPage.jsx'));
 const AccountPage = lazy(() => import('./pages/admin/MiscPages.jsx').then((m) => ({ default: m.AccountPage })));
 
 const guard = (permission, element) => (
@@ -57,6 +58,7 @@ export default function App() {
             {guard('appointments:read', <Route path="agenda" element={<AgendaPage />} />)}
             {guard('sales:manage', <><Route path="atendimentos" element={<SalesListPage />} /><Route path="atendimentos/:id" element={<SaleDetailPage />} /></>)}
             {guard('clients:read', <Route path="clientes" element={<ClientsPage />} />)}
+            {guard('subscriptions:manage', <Route path="planos" element={<PlansPage />} />)}
             {guard('finance:own:read', <Route path="meu-financeiro" element={<MyFinancePage />} />)}
             {guard('barbers:manage', <Route path="barbeiros" element={<BarbersPage />} />)}
             {guard('catalog:manage', <Route path="servicos" element={<ServicesPage />} />)}

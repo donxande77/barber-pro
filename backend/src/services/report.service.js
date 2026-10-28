@@ -90,12 +90,16 @@ export async function barberReport(ctx, q) {
 function summaryKpis(s) {
   return [
     ['Faturamento (vendas fechadas)', brl(s.revenue)], ['Número de vendas', String(s.salesCount)],
-    ['Recebimentos', brl(s.receipts)], ['Outras receitas', brl(s.otherIncome)],
+    ['Recebimentos de vendas', brl(s.receipts)], ['Mensalidades de planos recebidas', brl(s.subscriptionReceipts)],
+    ['Outras receitas', brl(s.otherIncome)],
     ['Despesas', brl(s.expenses)], ['Pagamentos a profissionais', brl(s.payouts)],
     ['Resultado operacional (caixa)', brl(s.operatingResult)], ['Ajustes', brl(s.adjustments)],
     ['Custo dos produtos vendidos', brl(s.cogs)], ['Comissões do período', brl(s.commissionsAccrued)],
     ['Pendente com profissionais', brl(s.pendingToBarbers)], ['Contas a pagar em aberto', brl(s.payablesOpen)],
     ['Contas a receber em aberto', brl(s.receivablesOpen)],
+    ['Assinantes ativos (hoje)', String(s.plans.activeSubscribers)], ['Mensalidades contratadas (por mês)', brl(s.plans.mrr)],
+    ['Serviços cobertos por planos', `${s.plans.coveredServices} · ${brl(s.plans.coveredValue)}`],
+    ['Mensalidades vencidas em aberto', `${s.plans.overdueCharges} · ${brl(s.plans.overdueAmount)}`],
   ];
 }
 
@@ -172,11 +176,11 @@ export async function consolidatedReport(ctx, q) {
         title: 'Comparativo entre unidades',
         columns: [
           { key: 'unit', label: 'Unidade' }, { key: 'revenue', label: 'Faturamento', money: true }, { key: 'receipts', label: 'Recebimentos', money: true },
-          { key: 'otherIncome', label: 'Outras receitas', money: true }, { key: 'expenses', label: 'Despesas', money: true },
+          { key: 'subscriptionReceipts', label: 'Mensalidades', money: true }, { key: 'otherIncome', label: 'Outras receitas', money: true }, { key: 'expenses', label: 'Despesas', money: true },
           { key: 'operatingResult', label: 'Resultado', money: true },
         ],
         rows: c.perUnit.map((u) => ({ ...u, unit: u.unit.name })),
-        totals: { revenue: c.total.revenue, receipts: c.total.receipts, otherIncome: c.total.otherIncome, expenses: c.total.expenses, operatingResult: c.total.operatingResult },
+        totals: { revenue: c.total.revenue, receipts: c.total.receipts, subscriptionReceipts: c.total.subscriptionReceipts, otherIncome: c.total.otherIncome, expenses: c.total.expenses, operatingResult: c.total.operatingResult },
       },
       {
         title: 'Transferências internas (não entram em receitas nem despesas)',

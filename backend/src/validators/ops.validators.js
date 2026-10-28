@@ -68,6 +68,7 @@ const itemBody = z.object({
   barberId: uuid.optional(),
   quantity: z.number().int().min(1).max(999).default(1),
   discount: moneyInput.default('0'),
+  useSubscription: z.boolean().default(true), // false = cobrar normalmente mesmo com plano
 });
 export const saleCreateBody = z.object({
   unitId: uuid,
@@ -76,7 +77,12 @@ export const saleCreateBody = z.object({
   items: z.array(itemBody).max(50).default([]),
 });
 export const saleItemBody = itemBody;
-export const saleItemUpdateBody = z.object({ discount: moneyInput.optional(), barberId: uuid.optional(), quantity: z.number().int().min(1).max(999).optional() });
+export const saleItemUpdateBody = z.object({
+  discount: moneyInput.optional(),
+  barberId: uuid.optional(),
+  quantity: z.number().int().min(1).max(999).optional(),
+  covered: z.boolean().optional(), // usar (true) ou não (false) o plano do cliente neste item
+});
 export const saleItemParams = z.object({ id: uuid, itemId: uuid });
 export const saleListQuery = z.object({
   unitId: uuid.optional(),
@@ -158,7 +164,7 @@ export const txBody = z.object({
 });
 export const txListQuery = z.object({
   unitId: uuid.optional(), accountId: uuid.optional(), from: dateStr, to: dateStr,
-  kind: z.enum(['SALE_PAYMENT', 'INCOME', 'EXPENSE', 'BILL_PAYMENT', 'BILL_RECEIPT', 'BARBER_PAYOUT', 'CHAIR_RENT_RECEIPT', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUSTMENT', 'REVERSAL']).optional(),
+  kind: z.enum(['SALE_PAYMENT', 'INCOME', 'EXPENSE', 'BILL_PAYMENT', 'BILL_RECEIPT', 'BARBER_PAYOUT', 'CHAIR_RENT_RECEIPT', 'SUBSCRIPTION_PAYMENT', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUSTMENT', 'REVERSAL']).optional(),
 });
 export const billBody = z.object({
   unitId: uuid,
@@ -212,3 +218,46 @@ export const postBody = z.object({
 });
 export const postListQuery = z.object({ status: z.enum(['PENDING', 'PUBLISHED', 'HIDDEN']).optional(), unitId: uuid.optional() });
 export const publicPostsQuery = z.object({ unitId: uuid.optional(), tag: z.string().trim().max(30).optional(), barberId: uuid.optional() });
+
+// ── Planos mensais ──
+const method = z.enum(['CASH', 'PIX', 'DEBIT_CARD', 'CREDIT_CARD', 'OTHER']);
+export const planBody = z.object({
+  name: z.string().trim().min(2, 'Dê um nome ao plano.').max(60),
+  description: optionalText(400),
+  price: positiveMoney,
+  unitId: uuid.nullable().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  highlight: z.boolean().default(false),
+  commissionOnCovered: z.boolean().default(true),
+  sortOrder: z.number().int().min(0).max(9999).default(0),
+  items: z
+    .array(z.object({ serviceId: uuid, quantity: z.number().int().min(1).max(60).nullable().optional() }))
+    .min(1, 'Inclua ao menos um serviço.')
+    .max(10),
+});
+export const planListQuery = z.object({ status: z.enum(['ACTIVE', 'INACTIVE']).optional() });
+const chargePayment = z.object({ accountId: uuid, method });
+export const subscribeBody = z.object({
+  clientId: uuid,
+  planId: uuid,
+  unitId: uuid,
+  startDate: dateStr.optional(),
+  notes: optionalText(300),
+  payment: chargePayment.optional(), // registra a 1ª mensalidade como paga
+});
+export const subscriptionListQuery = z.object({
+  status: z.enum(['ACTIVE', 'PAUSED', 'CANCELLED']).optional(),
+  unitId: uuid.optional(),
+  clientId: uuid.optional(),
+  search: z.string().trim().max(80).optional(),
+});
+export const subscriptionStatusBody = z.object({ action: z.enum(['pause', 'resume', 'cancel']), reason: optionalText(200) });
+export const chargeListQuery = z.object({
+  unitId: uuid.optional(),
+  status: z.enum(['OPEN', 'PAID', 'CANCELLED']).optional(),
+  from: dateStr.optional(),
+  to: dateStr.optional(),
+});
+export const chargePayBody = chargePayment;
+export const generateChargesBody = z.object({ unitId: uuid.optional() });
+export const publicPlansQuery = z.object({ unitId: uuid.optional() });

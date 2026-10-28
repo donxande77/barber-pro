@@ -79,10 +79,13 @@ export const LABELS = {
   account: { CASH: 'Caixa (dinheiro)', BANK: 'Banco', DIGITAL_WALLET: 'Carteira digital', CARD_RECEIVABLE: 'Recebíveis de cartão' },
   tx: {
     OPENING_BALANCE: 'Saldo inicial', SALE_PAYMENT: 'Recebimento de venda', INCOME: 'Receita', EXPENSE: 'Despesa', BILL_PAYMENT: 'Conta paga',
-    BILL_RECEIPT: 'Conta recebida', BARBER_PAYOUT: 'Pagamento a profissional', CHAIR_RENT_RECEIPT: 'Aluguel de cadeira',
+    BILL_RECEIPT: 'Conta recebida', BARBER_PAYOUT: 'Pagamento a profissional', CHAIR_RENT_RECEIPT: 'Aluguel de cadeira', SUBSCRIPTION_PAYMENT: 'Mensalidade de plano',
     TRANSFER_IN: 'Transferência recebida', TRANSFER_OUT: 'Transferência enviada', ADJUSTMENT: 'Ajuste', REVERSAL: 'Estorno',
   },
   bill: { OPEN: 'Em aberto', PARTIAL: 'Parcial', PAID: 'Quitada', CANCELLED: 'Cancelada' },
   review: { PENDING: 'Aguardando', APPROVED: 'Publicada', REJECTED: 'Recusada' },
   period: { WEEKLY: 'por semana', MONTHLY: 'por mês' },
+  subscription: { ACTIVE: 'Ativa', PAUSED: 'Pausada', CANCELLED: 'Cancelada' },
+  charge: { OPEN: 'Em aberto', PAID: 'Paga', CANCELLED: 'Cancelada' },
+  subPayment: { OK: 'Em dia', OVERDUE: 'Vencida (na tolerância)', BLOCKED: 'Bloqueada por atraso' },
 };

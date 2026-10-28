@@ -13,6 +13,7 @@ import * as fin from '../services/finance.service.js';
 import * as dash from '../services/dashboard.service.js';
 import * as pub from '../services/public.service.js';
 import * as posts from '../services/post.service.js';
+import * as plans from '../services/plan.service.js';
 
 const p = (v) => v.params;
 const b = (v) => v.body;
@@ -160,4 +161,18 @@ export const postCtl = {
   create: handle((ctx, v) => posts.createPost(ctx, b(v)), 201),
   update: handle((ctx, v) => posts.updatePost(ctx, p(v).id, b(v))),
   remove: handle((ctx, v) => posts.deletePost(ctx, p(v).id), 204),
+};
+
+export const planCtl = {
+  list: handle((ctx, v) => plans.listPlans(ctx, q(v))),
+  create: handle((ctx, v) => plans.createPlan(ctx, b(v)), 201),
+  update: handle((ctx, v) => plans.updatePlan(ctx, p(v).id, b(v))),
+  subscriptions: handle((ctx, v) => plans.listSubscriptions(ctx, q(v))),
+  subscription: handle((ctx, v) => plans.getSubscription(ctx, p(v).id)),
+  subscribe: handle((ctx, v) => plans.subscribe(ctx, b(v)), 201),
+  setStatus: handle((ctx, v) => plans.changeSubscriptionStatus(ctx, p(v).id, b(v))),
+  charges: handle((ctx, v) => plans.listCharges(ctx, q(v))),
+  generate: handle((ctx, v) => plans.generateCharges(ctx, b(v))),
+  pay: handle((ctx, v) => plans.payCharge(ctx, p(v).id, b(v))),
+  cancelCharge: handle((ctx, v) => plans.cancelCharge(ctx, p(v).id, b(v))),
 };
