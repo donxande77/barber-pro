@@ -29,8 +29,8 @@ async function start() {
 
 function PreviewBanner() {
   return (
-    <div className="sticky top-0 z-50 bg-gold px-4 py-1.5 text-center text-xs font-semibold text-gold-contrast">
-      Demonstração visual — dados de exemplo, nada é salvo. Login: demo@barberpro.dev · Demo2026senha
+    <div className="bg-gold px-4 py-1.5 text-center text-xs font-semibold text-gold-contrast">
+      Demonstração com dados fictícios — nada é salvo. Painel: dono@demo.barberpro · Demo2026senha
     </div>
   );
 }

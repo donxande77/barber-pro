@@ -6,7 +6,7 @@ export function notFoundHandler(req, _res, next) {
   next(new AppError(404, 'ROUTE_NOT_FOUND', 'Rota não encontrada.'));
 }
 
-// eslint-disable-next-line no-unused-vars
+ 
 export function errorHandler(err, req, res, _next) {
   if (err instanceof ZodError) {
     return res.status(400).json({

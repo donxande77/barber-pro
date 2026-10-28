@@ -15,7 +15,7 @@ export const DEFAULT_SITE_CONFIG = {
     accent: '#C9A24A',
     accentContrast: '#0B0B0C',
   },
-  fonts: { heading: 'Playfair Display', body: 'Inter' },
+  fonts: { heading: 'Oswald', body: 'Manrope' },
   hero: {
     title: 'Corte de respeito. Barba no ponto.',
     subtitle: 'Escolha a unidade, o serviço e o profissional. Seu horário confirmado em menos de um minuto.',

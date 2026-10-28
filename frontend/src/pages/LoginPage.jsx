@@ -17,7 +17,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(loginSchema), defaultValues: import.meta.env.VITE_PREVIEW === '1'
-      ? { email: 'demo@barberpro.dev', password: 'Demo2026senha' }
+      ? { email: 'dono@demo.barberpro', password: 'Demo2026senha' }
       : { email: '', password: '' },
   });
 

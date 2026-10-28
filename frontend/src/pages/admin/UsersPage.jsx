@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UserPlus, X, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api.js';
+import { PageHeader } from '../../components/ui.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { ROLE_LABELS, userSchema } from '../../lib/schemas.js';
 
@@ -31,8 +32,7 @@ export default function UsersPage() {
 
   const toggleStatus = async (u) => {
     const next = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    if (next === 'INACTIVE' && import.meta.env.VITE_PREVIEW !== '1' && !window.confirm(`Desativar ${u.name}? As sessões abertas serão encerradas.`)) return;
-    try {
+        try {
       await api.patch(`/users/${u.id}`, { status: next });
       load();
     } catch (e) {
@@ -42,17 +42,15 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-3xl">Usuários</h1>
-          <p className="mt-1 text-sm text-muted">Equipe com acesso ao painel. Acessos de barbeiros são criados no cadastro do barbeiro.</p>
-        </div>
-        {can('users:manage') && (
+      <PageHeader
+        title="Usuários"
+        subtitle="Equipe com acesso ao painel. Acessos de barbeiros são criados no cadastro do barbeiro."
+        actions={can('users:manage') && (
           <button className="btn-gold" onClick={() => setShowForm(true)}>
             <UserPlus className="h-4 w-4" /> Novo usuário
           </button>
         )}
-      </header>
+      />
 
       {error && <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
 

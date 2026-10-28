@@ -1,20 +1,20 @@
 @import 'tailwindcss';
 
 /*
- * Tokens de tema. Os valores abaixo são o padrão (preto, grafite, branco e dourado);
- * na Fase 3 eles passam a vir da configuração publicada no banco (src/lib/theme.js).
+ * Tokens de tema. Valores padrão (preto, grafite, branco e dourado); no site público são
+ * substituídos pela configuração publicada no painel (src/lib/theme.js).
  * Formato "R G B" para permitir opacidade nas classes do Tailwind.
  */
 :root {
   --bp-bg: 11 11 12;
-  --bp-surface: 28 28 31;
+  --bp-surface: 22 22 24;
   --bp-graphite: 42 42 46;
   --bp-text: 245 245 244;
   --bp-muted: 168 162 158;
   --bp-accent: 201 162 74;
   --bp-accent-contrast: 11 11 12;
-  --bp-font-heading: 'Playfair Display', Georgia, serif;
-  --bp-font-body: 'Inter', system-ui, sans-serif;
+  --bp-font-heading: 'Oswald', 'Arial Narrow', sans-serif;
+  --bp-font-body: 'Manrope', system-ui, sans-serif;
 }
 
 @theme inline {
@@ -31,10 +31,18 @@
 
 html {
   color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   @apply bg-bg text-ink font-sans antialiased;
+  font-feature-settings: 'tnum' 0;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 :focus-visible {
@@ -42,31 +50,105 @@ body {
   outline-offset: 2px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Componentes reutilizáveis (Tailwind v4: @utility permite reuso via @apply) */
 @utility btn {
   @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
 }
-
 @utility btn-gold {
   @apply btn bg-gold text-gold-contrast hover:brightness-110;
 }
-
 @utility btn-ghost {
   @apply btn border border-white/10 text-ink hover:bg-white/5;
 }
-
+@utility btn-danger {
+  @apply btn border border-red-500/30 text-red-300 hover:bg-red-500/10;
+}
+@utility btn-sm {
+  @apply px-3 py-1.5 text-xs;
+}
 @utility input {
-  @apply w-full rounded-lg border border-white/10 bg-bg px-3 py-2.5 text-sm text-ink placeholder:text-muted/60 focus:border-gold/60 focus:outline-none;
+  @apply w-full rounded-lg border border-white/10 bg-bg px-3 py-2.5 text-sm text-ink placeholder:text-muted/60 focus:border-gold/60 focus:outline-none disabled:opacity-60;
 }
-
 @utility label {
-  @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted;
+  @apply mb-1.5 block text-xs font-medium text-muted;
 }
-
 @utility card {
   @apply rounded-2xl border border-white/5 bg-surface;
 }
-
 @utility field-error {
   @apply mt-1 text-xs text-red-400;
+}
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lista de preços no estilo da tabela de barbearia: nome ........ preço */
+@utility leader {
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+  border-bottom: 1px dotted rgb(var(--bp-muted) / 0.45);
+  transform: translateY(-0.3em);
+}
+
+/* Poste de barbeiro: o elemento de assinatura do site público */
+@keyframes bp-pole {
+  to {
+    background-position: 0 -112px;
+  }
+}
+@utility barber-pole {
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(var(--bp-accent)) 0 14px,
+    rgb(var(--bp-text)) 14px 28px,
+    rgb(var(--bp-bg)) 28px 42px,
+    rgb(var(--bp-text)) 42px 56px
+  );
+  background-size: 100% 112px;
+  animation: bp-pole 6s linear infinite;
+}
+
+/* ── Impressão A4 dos relatórios ── */
+@page {
+  size: A4;
+  margin: 14mm;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    color-scheme: light;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-sheet {
+    background: #fff !important;
+    color: #111 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .print-sheet * {
+    color: #111 !important;
+    border-color: #ddd !important;
+    background: transparent !important;
+  }
+  .print-sheet table {
+    page-break-inside: auto;
+  }
+  .print-sheet tr {
+    page-break-inside: avoid;
+  }
 }

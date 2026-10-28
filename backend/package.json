@@ -12,7 +12,9 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
     "postinstall": "prisma generate",
-    "test:db-reset": "node scripts/reset-test-db.js"
+    "test:db-reset": "node scripts/reset-test-db.js",
+    "lint": "eslint .",
+    "db:seed-demo": "node prisma/seed-demo.js"
   },
   "author": "",
   "license": "ISC",
@@ -35,6 +37,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
     "prisma": "^7.10.1",
     "supertest": "^7.3.1",
     "vitest": "^5.0.5"
