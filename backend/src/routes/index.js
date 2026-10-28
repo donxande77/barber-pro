@@ -8,8 +8,9 @@ import * as auth from '../controllers/auth.controller.js';
 import * as users from '../controllers/users.controller.js';
 import { loginBody, changePasswordBody } from '../validators/auth.validators.js';
 import { createUserBody, updateUserBody, listUsersQuery } from '../validators/user.validators.js';
-import { idParams, unitParams } from '../validators/common.js';
-import * as unitService from '../services/unit.service.js';
+import { idParams } from '../validators/common.js';
+import { admin } from './admin.routes.js';
+import { publicRoutes } from './public.routes.js';
 import { z } from 'zod';
 
 export const router = Router();
@@ -43,11 +44,11 @@ router.post('/users', requirePermission('users:manage'), validate({ body: create
 router.get('/users/:id', requirePermission('users:read'), validate({ params: idParams }), users.get);
 router.patch('/users/:id', requirePermission('users:manage'), validate({ params: idParams, body: updateUserBody }), users.update);
 
-// ── Unidades (leitura com escopo; CRUD na Fase 2) ──
-router.get('/units', requirePermission('units:read'), async (req, res) => res.json(await unitService.listUnits(req.ctx)));
-router.get('/units/:unitId', requirePermission('units:read'), validate({ params: unitParams }), async (req, res) =>
-  res.json(await unitService.getUnit(req.ctx, req.valid.params.unitId)),
-);
+// ── Site público (sem login) ──
+router.use('/public', publicRoutes);
+
+// ── Painel ──
+router.use(admin);
 
 // ── Auditoria ──
 const auditQuery = z.object({
@@ -58,6 +59,7 @@ router.get('/audit', requirePermission('audit:read'), validate({ query: auditQue
   const { entity, limit } = req.valid.query;
   const rows = await prisma.auditLog.findMany({
     where: { companyId: req.ctx.user.companyId, ...(entity ? { entity } : {}) },
+    include: { user: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
     take: limit,
   });

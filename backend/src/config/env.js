@@ -14,6 +14,15 @@ const schema = z.object({
   LOGIN_LOCK_MINUTES: z.coerce.number().int().positive().default(15),
   LOGIN_RATE_LIMIT_PER_15MIN: z.coerce.number().int().positive().default(20),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  // Pasta onde as imagens enviadas pelo painel são gravadas
+  UPLOAD_DIR: z.string().default('uploads'),
+  // Empresa exibida no site público (slug). Vazio = a única empresa cadastrada.
+  PUBLIC_COMPANY_SLUG: z.string().optional(),
+  // Endereço público do site, usado para montar links de avaliação e de gerenciamento do agendamento
+  PUBLIC_SITE_URL: z.string().default('http://localhost:5173'),
+  PUBLIC_BOOKING_RATE_LIMIT_PER_15MIN: z.coerce.number().int().positive().default(15),
+  // Pasta com o build do frontend (frontend/dist) para a API servir o site em produção. Vazio = não servir.
+  FRONTEND_DIST: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

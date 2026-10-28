@@ -439,6 +439,7 @@ model Service {
   description String?
   imageUrl    String?
   isCombo     Boolean      @default(false)
+  commissionPct Decimal?   @db.Decimal(5, 2) // regra padrão do serviço (usada quando o barbeiro não tem regra própria)
   status      RecordStatus @default(ACTIVE)
   sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now()) @db.Timestamptz(3)
@@ -493,6 +494,7 @@ model Product {
   sku               String?
   price             Decimal      @db.Decimal(12, 2)
   cost              Decimal      @db.Decimal(12, 2)
+  commissionPct     Decimal?     @db.Decimal(5, 2) // comissão padrão sobre a venda do produto
   status            RecordStatus @default(ACTIVE)
   createdAt         DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
@@ -585,6 +587,8 @@ model Appointment {
   createdById   String?           @db.Uuid
   cancelledAt   DateTime?         @db.Timestamptz(3)
   cancelReason  String?
+  manageToken   String?           @unique // link do cliente para consultar/cancelar
+  reviewToken   String?           @unique // link de avaliação, gerado ao concluir o atendimento
   createdAt     DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime          @updatedAt @db.Timestamptz(3)
 

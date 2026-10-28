@@ -36,7 +36,12 @@ export const PERMISSIONS = {
   'finance:own:read': ['BARBER'], // somente os próprios dados
   'payouts:manage': ['OWNER', 'MANAGER'],
 
+  // Estoque e avaliações
+  'stock:manage': ['OWNER', 'MANAGER'],
+  'reviews:moderate': ['OWNER', 'MANAGER'],
+
   // Relatórios e auditoria
+  'reports:barber': ['OWNER', 'MANAGER', 'BARBER'], // barbeiro: somente o próprio
   'reports:unit': ['OWNER', 'MANAGER'],
   'reports:consolidated': ['OWNER'],
   'audit:read': ['OWNER'],
