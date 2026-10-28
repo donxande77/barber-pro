@@ -31,7 +31,7 @@ export default function UsersPage() {
 
   const toggleStatus = async (u) => {
     const next = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    if (next === 'INACTIVE' && !window.confirm(`Desativar ${u.name}? As sessões abertas serão encerradas.`)) return;
+    if (next === 'INACTIVE' && import.meta.env.VITE_PREVIEW !== '1' && !window.confirm(`Desativar ${u.name}? As sessões abertas serão encerradas.`)) return;
     try {
       await api.patch(`/users/${u.id}`, { status: next });
       load();

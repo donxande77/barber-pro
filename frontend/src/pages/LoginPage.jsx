@@ -16,7 +16,10 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+  } = useForm({ resolver: zodResolver(loginSchema), defaultValues: import.meta.env.VITE_PREVIEW === '1'
+      ? { email: 'demo@barberpro.dev', password: 'Demo2026senha' }
+      : { email: '', password: '' },
+  });
 
   if (status === 'authenticated') return <Navigate to="/painel" replace />;
 
