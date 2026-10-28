@@ -27,19 +27,19 @@
 | RF03 | Escopo por unidade (gerente/recepcionista só nas autorizadas; barbeiro pelos vínculos) | 1 ✅ |
 | RF04 | Gestão de usuários da equipe | 1 ✅ |
 | RF05 | Trilha de auditoria | 1 ✅ |
-| RF06 | Cadastro de unidades, horários, contatos, políticas | 2 |
-| RF07 | Site público alimentado pela API | 3 |
-| RF08 | Personalização visual com rascunho, publicação e restauração de versões | 3 |
-| RF09 | Clientes, barbeiros (vínculos, escalas, folgas), serviços, produtos, estoque | 4 |
-| RF10 | Agendamento público e interno com prevenção de conflitos | 5 |
-| RF11 | Atendimentos, vendas, pagamentos parciais e estornos | 6 |
-| RF12 | Remuneração mista com vigência e snapshot das regras | 7 |
-| RF13 | Financeiro individual do barbeiro (calculado, devido, pago, pendente) | 7 |
-| RF14 | Caixa, contas, despesas, contas a pagar/receber, transferências, fechamento | 8 |
-| RF15 | Consolidado sem duplicar transferências internas | 8 |
-| RF16 | Dashboards por função com Recharts | 9 |
-| RF17 | Relatórios A4, PDF, CSV e Excel | 9 |
-| RF18 | Avaliações vinculadas a atendimentos concluídos | 6/9 |
+| RF06 | Cadastro de unidades, horários, contatos, políticas | 2 ✅ |
+| RF07 | Site público alimentado pela API | 3 ✅ |
+| RF08 | Personalização visual com rascunho, publicação e restauração de versões | 3 ✅ |
+| RF09 | Clientes, barbeiros (vínculos, escalas, folgas), serviços, produtos, estoque | 4 ✅ |
+| RF10 | Agendamento público e interno com prevenção de conflitos | 5 ✅ |
+| RF11 | Atendimentos, vendas, pagamentos parciais e estornos | 6 ✅ |
+| RF12 | Remuneração mista com vigência e snapshot das regras | 7 ✅ |
+| RF13 | Financeiro individual do barbeiro (calculado, devido, pago, pendente) | 7 ✅ |
+| RF14 | Caixa, contas, despesas, contas a pagar/receber, transferências, fechamento | 8 ✅ |
+| RF15 | Consolidado sem duplicar transferências internas | 8 ✅ |
+| RF16 | Dashboards por função com Recharts | 9 ✅ |
+| RF17 | Relatórios A4, PDF, CSV e Excel | 9 ✅ |
+| RF18 | Avaliações vinculadas a atendimentos concluídos | 6/9 ✅ |
 
 ## Requisitos não funcionais
 

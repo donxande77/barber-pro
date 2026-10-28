@@ -1,0 +1,38 @@
+# Produção em um servidor (VPS) com Docker. Coloque um proxy HTTPS (Caddy, Nginx, Traefik) na frente.
+# Uso: cp .env.prod.example .env.prod && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barber
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: barberpro
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barber -d barberpro"]
+      interval: 5s
+      retries: 10
+    # sem "ports": o banco não fica exposto na internet
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://barber:${POSTGRES_PASSWORD}@db:5432/barberpro?schema=public
+      CORS_ORIGINS: ${PUBLIC_SITE_URL:?defina PUBLIC_SITE_URL}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL}
+      PUBLIC_COMPANY_SLUG: ${PUBLIC_COMPANY_SLUG:-}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "127.0.0.1:3333:3333" # o proxy HTTPS encaminha para cá
+
+volumes:
+  pgdata:
+  uploads:

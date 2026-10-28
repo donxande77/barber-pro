@@ -1,5 +1,8 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+// Nos testes, as variáveis vêm só do .env.test (via Vitest): o .env de desenvolvimento não interfere.
+if (process.env.NODE_ENV !== 'test') dotenv.config({ quiet: true });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

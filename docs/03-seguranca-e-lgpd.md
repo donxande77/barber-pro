@@ -11,13 +11,23 @@
 | **D**enial of service | Inundar o login ou payloads gigantes | Rate limit; limite de 200 kB no JSON; senha máx. 128 caracteres | ✅ Fase 1 |
 | **E**levation of privilege | Gerente criando proprietário | `MANAGEABLE_ROLES`; ninguém altera a própria função; testes de escalada | ✅ Fase 1 (testado) |
 
-## Achados da revisão — Fase 1
+## Controles adicionais (todas as fases)
+
+- **Agendamento público:** limite por IP, consentimento obrigatório, validação no servidor de horário, expediente e duração; o cliente é identificado só pelo telefone e nunca vê dados de outros clientes. Links do cliente usam tokens aleatórios de 192 bits.
+- **Uploads:** só PNG, JPEG e WEBP, detectados pelos bytes (SVG recusado por poder conter scripts), até 5 MB, nome aleatório, servidos com `nosniff` e CSP restritiva.
+- **Relatórios CSV:** células que começam com `= + - @` são neutralizadas (injeção de fórmulas em planilhas).
+- **Concorrência:** restrição `EXCLUDE` na agenda, `SELECT … FOR UPDATE` ao fechar venda, receber, pagar profissional e fechar caixa; chave de idempotência nos pagamentos; índice único de comissão por item e de estorno por movimentação.
+- **Dinheiro:** `DECIMAL` no banco, `decimal.js` no código, valores trafegam como texto.
+- **Site em produção:** CSP própria para o frontend (scripts só da própria origem, fontes do Google Fonts).
+
+## Achados da revisão final
 
 | Severidade | Achado | Situação |
 |---|---|---|
-| Média | Rate limit em memória não é compartilhado entre múltiplas instâncias | Aceito para instância única; para escalar, trocar o store por Redis (Fase 10) |
-| Baixa | Proteção CSRF do login depende de Origin + SameSite + JSON (não há sessão antes do login) | Aceito — padrão recomendado |
-| Baixa | Sem MFA | Backlog (opcional para proprietário) |
+| Média | Limite de tentativas em memória não é compartilhado entre várias instâncias | Aceito para instância única; trocar por Redis ao escalar |
+| Baixa | Proteção CSRF do login e do agendamento público depende de Origin + SameSite + JSON (não há sessão antes) | Aceito — padrão recomendado |
+| Baixa | Sem autenticação em dois fatores | Backlog (recomendado para o proprietário) |
+| Baixa | Dependência `uuid` antiga dentro do `exceljs` (alerta moderado) | Corrigido com `overrides` para `uuid@11`; `npm audit` sem alertas |
 
 Nenhum achado Crítico ou Alto em aberto.
 

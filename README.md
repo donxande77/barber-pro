@@ -1,87 +1,75 @@
 # Barber Pro
 
-Plataforma de gestão para redes de barbearias: site público com agendamento, painel por função, remuneração mista, financeiro por unidade e consolidado, relatórios e personalização visual.
+Plataforma de gestão para redes de barbearias com várias unidades: site público responsivo com agendamento online, painel por função (proprietário, gerente, recepcionista e barbeiro), remuneração mista, financeiro por unidade e consolidado, relatórios em PDF/Excel/CSV e personalização visual sem mexer no código.
 
-**Stack:** React 19 + Vite + Tailwind 4 + React Router + React Hook Form + Zod + Recharts (frontend) · Node.js 22 + Express 5 + Prisma 7 + PostgreSQL 16 + Zod (backend) · Vitest + Supertest (testes).
+**Stack:** React 19 · Vite · Tailwind 4 · React Router · React Hook Form · Zod · Recharts · Lucide (frontend) — Node.js 22 · Express 5 · Prisma 7 · PostgreSQL 16 · Zod · Argon2id · PDFKit · ExcelJS (backend) — Vitest · Supertest (testes).
 
-> **Status:** Fase 1 de 10 concluída (estrutura, banco completo, autenticação e permissões). Veja `docs/05-roadmap-e-rastreabilidade.md`.
+## O que tem
+
+- **Site público** (celular primeiro): banner, serviços e preços em tabela de barbearia, promoções, barbeiros, galeria, produtos, avaliações reais, unidades com mapa/horários/WhatsApp, política de cancelamento. O cliente escolhe a unidade antes de ver serviços e horários.
+- **Agendamento online** em etapas (unidade → serviços → profissional ou "primeiro disponível" → dia e horário → dados com consentimento LGPD) e link para o cliente consultar/cancelar.
+- **Agenda interna**: por dia e por barbeiro, novo agendamento, confirmação, remarcação, não comparecimento, cancelamento com motivo. Conflitos barrados pelo banco, inclusive com pedidos simultâneos.
+- **Atendimentos e vendas**: abre a partir do agendamento, adiciona serviços/produtos com desconto, fecha (baixa estoque e calcula comissões), recebimentos parciais, estornos auditáveis, cancelamento.
+- **Remuneração mista**: comissão por serviço/produto, fixo, aluguel de cadeira, combinações por modelo de vínculo, bônus e ajustes, vigência das regras, cópia da regra em cada venda, calculado × devido × pago × pendente, pagamentos aos profissionais.
+- **Financeiro**: contas, saldos, receitas/despesas, contas a pagar e receber, transferências (sem dupla contagem no consolidado), fechamento de caixa com conciliação.
+- **Dashboards** por função e **relatórios** individual, por unidade e consolidado (impressão A4, PDF, Excel, CSV).
+- **Personalização**: marca, logotipo, cores, fontes, banner, textos, galeria, redes, ordem das seções — rascunho, pré-visualização, publicação e restauração de versões.
+- **Segurança**: sessões HttpOnly, CSRF, bloqueio de tentativas, permissões por função e unidade no backend, auditoria. Detalhes em `docs/03-seguranca-e-lgpd.md`.
 
 ## Estrutura
 
 ```
 barber-pro/
-├─ backend/            API Express (ES Modules)
-│  ├─ prisma/          schema.prisma, migrações e seed
-│  ├─ scripts/         utilitários (reset do banco de teste)
-│  └─ src/             config, db, routes, controllers, services, middlewares, validators, utils, tests
-├─ frontend/           React + Vite + Tailwind
-├─ docs/               visão, arquitetura, segurança/LGPD, API, roadmap
-├─ docker/             script de criação do banco de teste
-└─ docker-compose.yml  PostgreSQL local
+├─ backend/              API Express (ES Modules)
+│  ├─ prisma/            schema.prisma, migrações, seed (produção) e seed-demo
+│  ├─ scripts/           reset do banco de teste
+│  └─ src/               config, db, routes, controllers, services, middlewares, validators, utils, tests
+├─ frontend/             React + Vite + Tailwind (site público e painel)
+├─ docs/                 requisitos, arquitetura, segurança/LGPD, API, situação, manual, implantação e backup
+├─ scripts/              backup (PowerShell e shell)
+├─ Dockerfile            imagem única (API + site)
+├─ docker-compose.yml    PostgreSQL para desenvolvimento e testes
+└─ docker-compose.prod.yml
 ```
 
-## Pré-requisitos (Windows)
+## Rodar no Windows (desenvolvimento)
 
-- Node.js 22 LTS (`node -v` deve mostrar v22.12 ou maior)
-- PostgreSQL 16 — via Docker Desktop (recomendado) **ou** instalador oficial
-- Git
+Pré-requisitos: Node.js 22 LTS, Git e Docker Desktop (ou PostgreSQL 16 instalado).
 
-## Instalação — passo a passo (PowerShell)
+```powershell
+# 1. Banco de dados
+docker compose up -d
 
-1. **Banco de dados (Docker):**
-   ```powershell
-   docker compose up -d
-   ```
-   Sem Docker: crie no PostgreSQL o usuário `barber` e os bancos `barberpro` e `barberpro_test` (dono `barber`).
+# 2. Backend
+cd backend
+npm install
+Copy-Item .env.example .env          # ajuste a senha do banco e os dados SEED_*
+Copy-Item .env.test.example .env.test
+npx prisma migrate dev               # aplica as migrações
+npm run db:seed                      # cria sua empresa e o primeiro proprietário (sem dados fictícios)
+npm run dev                          # http://localhost:3333/api/health
 
-2. **Backend:**
-   ```powershell
-   cd backend
-   npm install
-   Copy-Item .env.example .env
-   Copy-Item .env.test.example .env.test
-   ```
-   Edite `.env` e `.env.test` (senha do banco e dados do primeiro proprietário em `SEED_*`).
+# 3. Frontend (outro terminal)
+cd frontend
+npm install
+npm run dev                          # http://localhost:5173
+```
 
-3. **Migrações e seed:**
-   ```powershell
-   npx prisma migrate dev
-   npm run db:seed
-   ```
-   O seed cria apenas a empresa, o proprietário e categorias financeiras padrão — nenhum dado fictício.
+Entre em http://localhost:5173/entrar com o e-mail e a senha de `SEED_OWNER_*`.
 
-4. **Testes do backend:**
-   ```powershell
-   npm test
-   ```
-   Os testes recriam o banco `barberpro_test` do zero (o nome precisa terminar em `_test`).
+**Quer ver com dados de exemplo?** `npm run db:seed-demo` cria uma empresa separada e claramente fictícia ("Barbearia Demonstração", login `dono@demo.barberpro` / `Demo2026senha`). Para o site mostrar essa empresa, coloque `PUBLIC_COMPANY_SLUG=barbearia-demonstracao` no `.env`. Não use em produção.
 
-5. **Rodar a API:** `npm run dev` → http://localhost:3333/api/health
+## Testes
 
-6. **Frontend** (outro terminal):
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   Acesse http://localhost:5173/entrar e entre com o e-mail e senha definidos em `SEED_OWNER_*`.
+```powershell
+cd backend;  npm test      # 129 testes de API e regras de negócio (recria o banco *_test)
+cd frontend; npm test      # 25 testes (validações + todas as telas renderizadas)
+npm run lint               # em cada pasta
+```
 
-## Scripts úteis (backend)
+## Implantação, backup e uso
 
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | API com recarga automática |
-| `npm test` | Testes (Vitest + Supertest) |
-| `npm run db:migrate` | Cria/aplica migrações em desenvolvimento |
-| `npm run db:deploy` | Aplica migrações em produção |
-| `npm run db:seed` | Cria empresa e proprietário iniciais |
-
-## Documentação
-
-- `docs/01-visao-e-requisitos.md`
-- `docs/02-arquitetura.md` (inclui ADRs)
-- `docs/03-seguranca-e-lgpd.md`
-- `docs/04-api.md`
-- `docs/05-roadmap-e-rastreabilidade.md`
-
-Manual administrativo, procedimentos de backup e instruções de implantação entram na Fase 10.
+- Implantação (VPS com Docker, ou Render/Railway), atualização, rollback e backup/restauração: `docs/07-implantacao-e-backup.md`
+- Manual do painel: `docs/06-manual-administrativo.md`
+- API: `docs/04-api.md`
+- Situação das fases, rastreabilidade e limitações conhecidas: `docs/05-roadmap-e-rastreabilidade.md`
