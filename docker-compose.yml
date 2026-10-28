@@ -1,0 +1,22 @@
+# Banco de dados para desenvolvimento e testes.
+# Uso: docker compose up -d   (cria os bancos barberpro e barberpro_test)
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barber
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-barber}
+      POSTGRES_DB: barberpro
+    ports:
+      - "127.0.0.1:5432:5432" # exposto só na máquina local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barber -d barberpro"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:

@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens de tema. Os valores abaixo são o padrão (preto, grafite, branco e dourado);
+ * na Fase 3 eles passam a vir da configuração publicada no banco (src/lib/theme.js).
+ * Formato "R G B" para permitir opacidade nas classes do Tailwind.
+ */
+:root {
+  --bp-bg: 11 11 12;
+  --bp-surface: 28 28 31;
+  --bp-graphite: 42 42 46;
+  --bp-text: 245 245 244;
+  --bp-muted: 168 162 158;
+  --bp-accent: 201 162 74;
+  --bp-accent-contrast: 11 11 12;
+  --bp-font-heading: 'Playfair Display', Georgia, serif;
+  --bp-font-body: 'Inter', system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-bg: rgb(var(--bp-bg));
+  --color-surface: rgb(var(--bp-surface));
+  --color-graphite: rgb(var(--bp-graphite));
+  --color-ink: rgb(var(--bp-text));
+  --color-muted: rgb(var(--bp-muted));
+  --color-gold: rgb(var(--bp-accent));
+  --color-gold-contrast: rgb(var(--bp-accent-contrast));
+  --font-heading: var(--bp-font-heading);
+  --font-sans: var(--bp-font-body);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg text-ink font-sans antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--bp-accent));
+  outline-offset: 2px;
+}
+
+/* Componentes reutilizáveis (Tailwind v4: @utility permite reuso via @apply) */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-gold {
+  @apply btn bg-gold text-gold-contrast hover:brightness-110;
+}
+
+@utility btn-ghost {
+  @apply btn border border-white/10 text-ink hover:bg-white/5;
+}
+
+@utility input {
+  @apply w-full rounded-lg border border-white/10 bg-bg px-3 py-2.5 text-sm text-ink placeholder:text-muted/60 focus:border-gold/60 focus:outline-none;
+}
+
+@utility label {
+  @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted;
+}
+
+@utility card {
+  @apply rounded-2xl border border-white/5 bg-surface;
+}
+
+@utility field-error {
+  @apply mt-1 text-xs text-red-400;
+}

@@ -1,0 +1,946 @@
+// Barber Pro — modelo de dados
+// Convenções:
+// - Valores monetários: Decimal(12,2). Percentuais: Decimal(5,2).
+// - Datas/horas: timestamptz (UTC no banco); o fuso de exibição vem de Unit.timezone.
+// - Horários recorrentes (expediente) em minutos desde 00:00 no fuso da unidade.
+// - Movimentações financeiras confirmadas nunca são apagadas: usa-se estorno (reversalOf).
+// - Restrições que o Prisma não expressa (EXCLUDE, CHECK) ficam nas migrações SQL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Enums ─────────────────────────
+
+enum Role {
+  OWNER
+  MANAGER
+  RECEPTIONIST
+  BARBER
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BarberStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+enum CompensationModel {
+  COMMISSION // apenas comissão
+  FIXED // apenas remuneração fixa
+  FIXED_PLUS_COMMISSION // fixo + comissão
+  CHAIR_RENTAL // aluguel de cadeira (barbeiro paga à unidade)
+  CHAIR_RENTAL_PLUS_COMMISSION // aluguel + comissão sobre produtos/serviços (exige regra explícita)
+}
+
+enum CompensationRuleType {
+  SERVICE_COMMISSION_PCT
+  PRODUCT_COMMISSION_PCT
+  FIXED_SALARY
+  CHAIR_RENTAL
+}
+
+enum RulePeriod {
+  WEEKLY
+  MONTHLY
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  PUBLIC
+  INTERNAL
+}
+
+enum SaleStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum SaleItemKind {
+  SERVICE
+  PRODUCT
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  DEBIT_CARD
+  CREDIT_CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  CONFIRMED
+  REVERSED
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  ADJUSTMENT
+  SALE
+  SALE_REVERSAL
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum ObligationType {
+  COMMISSION
+  FIXED_SALARY
+  CHAIR_RENTAL
+  BONUS
+  ADJUSTMENT
+}
+
+enum ObligationDirection {
+  PAYABLE_TO_BARBER // a empresa deve ao barbeiro
+  RECEIVABLE_FROM_BARBER // o barbeiro deve à empresa (ex.: aluguel de cadeira)
+}
+
+enum ObligationStatus {
+  OPEN
+  PARTIAL
+  SETTLED
+  CANCELLED
+}
+
+enum AccountType {
+  CASH
+  BANK
+  DIGITAL_WALLET
+  CARD_RECEIVABLE
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+enum BillKind {
+  PAYABLE
+  RECEIVABLE
+}
+
+enum BillStatus {
+  OPEN
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum TxDirection {
+  IN
+  OUT
+}
+
+enum TxKind {
+  OPENING_BALANCE
+  SALE_PAYMENT
+  INCOME
+  EXPENSE
+  BILL_PAYMENT
+  BILL_RECEIPT
+  BARBER_PAYOUT
+  CHAIR_RENT_RECEIPT
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+  REVERSAL
+}
+
+enum SiteConfigStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ───────────────────── Empresa e unidades ─────────────────────
+
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  document  String? // CNPJ
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  units              Unit[]
+  users              User[]
+  clients            Client[]
+  barbers            Barber[]
+  serviceCategories  ServiceCategory[]
+  services           Service[]
+  products           Product[]
+  compensationRules  CompensationRule[]
+  financialCategories FinancialCategory[]
+  siteConfigs        SiteConfigVersion[]
+  auditLogs          AuditLog[]
+}
+
+model Unit {
+  id                 String       @id @default(uuid()) @db.Uuid
+  companyId          String       @db.Uuid
+  name               String
+  slug               String
+  status             RecordStatus @default(ACTIVE)
+  timezone           String       @default("America/Sao_Paulo")
+  street             String?
+  number             String?
+  district           String?
+  city               String?
+  state              String?
+  zipCode            String?
+  phone              String?
+  whatsapp           String?
+  email              String?
+  instagramUrl       String?
+  cancellationPolicy String?
+  minCancelHours     Int          @default(2)
+  slotStepMinutes    Int          @default(15)
+  createdAt          DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime     @updatedAt @db.Timestamptz(3)
+
+  company           Company            @relation(fields: [companyId], references: [id])
+  hours             UnitHours[]
+  userAccess        UserUnitAccess[]
+  barberLinks       BarberUnit[]
+  serviceOffers     ServiceUnit[]
+  stocks            ProductStock[]
+  stockMovements    StockMovement[]
+  appointments      Appointment[]
+  sales             Sale[]
+  accounts          FinancialAccount[]
+  bills             Bill[]
+  transactions      FinancialTransaction[]
+  cashClosings      CashClosing[]
+  obligations       BarberObligation[]
+  payouts           BarberPayout[]
+  compensationRules CompensationRule[]
+  timeOffs          BarberTimeOff[]
+  reviews           Review[]
+  transfersOut      Transfer[]         @relation("TransferFromUnit")
+  transfersIn       Transfer[]         @relation("TransferToUnit")
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+}
+
+model UnitHours {
+  id       String @id @default(uuid()) @db.Uuid
+  unitId   String @db.Uuid
+  weekday  Int // 0 = domingo … 6 = sábado
+  openMin  Int // minutos desde 00:00
+  closeMin Int
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, weekday])
+}
+
+// ───────────────────── Usuários e acesso ─────────────────────
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  companyId      String       @db.Uuid
+  name           String
+  email          String       @unique
+  passwordHash   String
+  role           Role
+  status         RecordStatus @default(ACTIVE)
+  failedLogins   Int          @default(0)
+  lockedUntil    DateTime?    @db.Timestamptz(3)
+  lastLoginAt    DateTime?    @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  company     Company          @relation(fields: [companyId], references: [id])
+  unitAccess  UserUnitAccess[]
+  sessions    Session[]
+  barber      Barber?
+  auditLogs   AuditLog[]
+
+  @@index([companyId])
+}
+
+/// Unidades autorizadas para GERENTE e RECEPCIONISTA. O proprietário acessa todas;
+/// o barbeiro acessa as unidades dos seus vínculos (BarberUnit).
+model UserUnitAccess {
+  userId String @db.Uuid
+  unitId String @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([userId, unitId])
+}
+
+/// Sessão server-side. O cookie leva um token aleatório; aqui só guardamos o SHA-256 dele.
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  tokenHash  String    @unique
+  csrfToken  String
+  userId     String    @db.Uuid
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt  DateTime  @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ───────────────────── Clientes ─────────────────────
+
+model Client {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid
+  name        String
+  phone       String
+  email       String?
+  birthDate   DateTime? @db.Date
+  notes       String?
+  consentAt   DateTime? @db.Timestamptz(3) // aceite da política de privacidade (LGPD)
+  anonymizedAt DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  company      Company       @relation(fields: [companyId], references: [id])
+  appointments Appointment[]
+  sales        Sale[]
+  reviews      Review[]
+
+  @@unique([companyId, phone])
+  @@index([companyId, name])
+}
+
+// ───────────────────── Barbeiros ─────────────────────
+
+model Barber {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid
+  userId      String?      @unique @db.Uuid
+  name        String
+  photoUrl    String?
+  phone       String?
+  email       String?
+  bio         String?
+  specialties String[]
+  status      BarberStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  company      Company            @relation(fields: [companyId], references: [id])
+  user         User?              @relation(fields: [userId], references: [id])
+  units        BarberUnit[]
+  services     BarberService[]
+  timeOffs     BarberTimeOff[]
+  rules        CompensationRule[]
+  appointments Appointment[]
+  saleItems    SaleItem[]
+  obligations  BarberObligation[]
+  payouts      BarberPayout[]
+  reviews      Review[]
+
+  @@index([companyId])
+}
+
+/// Vínculo barbeiro × unidade, com o modelo de remuneração daquele vínculo.
+model BarberUnit {
+  id                String            @id @default(uuid()) @db.Uuid
+  barberId          String            @db.Uuid
+  unitId            String            @db.Uuid
+  compensationModel CompensationModel @default(COMMISSION)
+  isActive          Boolean           @default(true)
+  startDate         DateTime          @default(now()) @db.Date
+  endDate           DateTime?         @db.Date
+
+  barber    Barber           @relation(fields: [barberId], references: [id])
+  unit      Unit             @relation(fields: [unitId], references: [id])
+  schedules BarberSchedule[]
+
+  @@unique([barberId, unitId])
+  @@index([unitId])
+}
+
+model BarberSchedule {
+  id            String @id @default(uuid()) @db.Uuid
+  barberUnitId  String @db.Uuid
+  weekday       Int
+  startMin      Int
+  endMin        Int
+  breakStartMin Int?
+  breakEndMin   Int?
+
+  barberUnit BarberUnit @relation(fields: [barberUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([barberUnitId, weekday])
+}
+
+model BarberTimeOff {
+  id       String   @id @default(uuid()) @db.Uuid
+  barberId String   @db.Uuid
+  unitId   String?  @db.Uuid // nulo = todas as unidades
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt   DateTime @db.Timestamptz(3)
+  reason   String?
+
+  barber Barber @relation(fields: [barberId], references: [id])
+  unit   Unit?  @relation(fields: [unitId], references: [id])
+
+  @@index([barberId, startsAt])
+}
+
+// ───────────────────── Serviços e produtos ─────────────────────
+
+model ServiceCategory {
+  id        String @id @default(uuid()) @db.Uuid
+  companyId String @db.Uuid
+  name      String
+  sortOrder Int    @default(0)
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  services Service[]
+
+  @@unique([companyId, name])
+}
+
+model Service {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid
+  categoryId  String?      @db.Uuid
+  name        String
+  description String?
+  imageUrl    String?
+  isCombo     Boolean      @default(false)
+  status      RecordStatus @default(ACTIVE)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  company          Company            @relation(fields: [companyId], references: [id])
+  category         ServiceCategory?   @relation(fields: [categoryId], references: [id])
+  offers           ServiceUnit[]
+  barbers          BarberService[]
+  rules            CompensationRule[]
+  appointmentItems AppointmentItem[]
+  saleItems        SaleItem[]
+
+  @@index([companyId])
+}
+
+/// Preço, duração e promoção do serviço em cada unidade.
+model ServiceUnit {
+  id          String    @id @default(uuid()) @db.Uuid
+  serviceId   String    @db.Uuid
+  unitId      String    @db.Uuid
+  price       Decimal   @db.Decimal(12, 2)
+  durationMin Int
+  promoPrice  Decimal?  @db.Decimal(12, 2)
+  promoStart  DateTime? @db.Timestamptz(3)
+  promoEnd    DateTime? @db.Timestamptz(3)
+  isActive    Boolean   @default(true)
+
+  service Service @relation(fields: [serviceId], references: [id])
+  unit    Unit    @relation(fields: [unitId], references: [id])
+
+  @@unique([serviceId, unitId])
+}
+
+/// Profissionais habilitados para cada serviço.
+model BarberService {
+  barberId  String @db.Uuid
+  serviceId String @db.Uuid
+
+  barber  Barber  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([barberId, serviceId])
+}
+
+model Product {
+  id                String       @id @default(uuid()) @db.Uuid
+  companyId         String       @db.Uuid
+  name              String
+  description       String?
+  imageUrl          String?
+  sku               String?
+  price             Decimal      @db.Decimal(12, 2)
+  cost              Decimal      @db.Decimal(12, 2)
+  status            RecordStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
+
+  company        Company            @relation(fields: [companyId], references: [id])
+  stocks         ProductStock[]
+  stockMovements StockMovement[]
+  rules          CompensationRule[]
+  saleItems      SaleItem[]
+
+  @@unique([companyId, sku])
+  @@index([companyId])
+}
+
+model ProductStock {
+  productId   String @db.Uuid
+  unitId      String @db.Uuid
+  quantity    Int    @default(0)
+  minQuantity Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id])
+  unit    Unit    @relation(fields: [unitId], references: [id])
+
+  @@id([productId, unitId])
+}
+
+model StockMovement {
+  id         String            @id @default(uuid()) @db.Uuid
+  productId  String            @db.Uuid
+  unitId     String            @db.Uuid
+  type       StockMovementType
+  quantity   Int // sempre positivo; o tipo define o sentido
+  unitCost   Decimal?          @db.Decimal(12, 2)
+  reason     String?
+  saleItemId String?           @db.Uuid
+  transferRef String?          @db.Uuid // agrupa TRANSFER_OUT/IN da mesma transferência
+  createdById String?          @db.Uuid
+  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id])
+  unit    Unit    @relation(fields: [unitId], references: [id])
+
+  @@index([unitId, productId, createdAt])
+}
+
+// ───────────────────── Remuneração ─────────────────────
+
+/// Regra com vigência. Alterar uma comissão = encerrar a regra (validTo) e criar outra.
+/// Regras nunca são editadas depois de aplicadas; itens de venda guardam cópia (snapshot).
+model CompensationRule {
+  id          String               @id @default(uuid()) @db.Uuid
+  companyId   String               @db.Uuid
+  barberId    String               @db.Uuid
+  unitId      String?              @db.Uuid // nulo = todas as unidades do barbeiro
+  serviceId   String?              @db.Uuid // nulo = todos os serviços
+  productId   String?              @db.Uuid // nulo = todos os produtos
+  type        CompensationRuleType
+  percent     Decimal?             @db.Decimal(5, 2)
+  amount      Decimal?             @db.Decimal(12, 2)
+  period      RulePeriod?
+  validFrom   DateTime             @db.Timestamptz(3)
+  validTo     DateTime?            @db.Timestamptz(3)
+  notes       String?
+  createdById String?              @db.Uuid
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+
+  company Company  @relation(fields: [companyId], references: [id])
+  barber  Barber   @relation(fields: [barberId], references: [id])
+  unit    Unit?    @relation(fields: [unitId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([barberId, type, validFrom])
+}
+
+// ───────────────────── Agenda ─────────────────────
+
+model Appointment {
+  id            String            @id @default(uuid()) @db.Uuid
+  unitId        String            @db.Uuid
+  clientId      String            @db.Uuid
+  barberId      String            @db.Uuid
+  startsAt      DateTime          @db.Timestamptz(3)
+  endsAt        DateTime          @db.Timestamptz(3)
+  status        AppointmentStatus @default(SCHEDULED)
+  source        AppointmentSource
+  totalPrice    Decimal           @db.Decimal(12, 2) // snapshot no momento do agendamento
+  totalDuration Int
+  notes         String?
+  createdById   String?           @db.Uuid
+  cancelledAt   DateTime?         @db.Timestamptz(3)
+  cancelReason  String?
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @db.Timestamptz(3)
+
+  unit   Unit              @relation(fields: [unitId], references: [id])
+  client Client            @relation(fields: [clientId], references: [id])
+  barber Barber            @relation(fields: [barberId], references: [id])
+  items  AppointmentItem[]
+  sale   Sale?
+  review Review?
+
+  @@index([unitId, startsAt])
+  @@index([barberId, startsAt])
+}
+
+model AppointmentItem {
+  id            String  @id @default(uuid()) @db.Uuid
+  appointmentId String  @db.Uuid
+  serviceId     String  @db.Uuid
+  serviceName   String // snapshot
+  price         Decimal @db.Decimal(12, 2) // snapshot
+  durationMin   Int
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  service     Service     @relation(fields: [serviceId], references: [id])
+}
+
+// ───────────────────── Atendimentos, vendas e pagamentos ─────────────────────
+
+/// Atendimento/venda. Um atendimento é uma Sale ligada a um agendamento;
+/// vendas avulsas de produto não têm agendamento.
+model Sale {
+  id            String     @id @default(uuid()) @db.Uuid
+  unitId        String     @db.Uuid
+  clientId      String?    @db.Uuid
+  appointmentId String?    @unique @db.Uuid
+  status        SaleStatus @default(OPEN)
+  subtotal      Decimal    @default(0) @db.Decimal(12, 2)
+  discount      Decimal    @default(0) @db.Decimal(12, 2)
+  total         Decimal    @default(0) @db.Decimal(12, 2)
+  notes         String?
+  createdById   String?    @db.Uuid
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  closedAt      DateTime?  @db.Timestamptz(3)
+  cancelledAt   DateTime?  @db.Timestamptz(3)
+  cancelReason  String?
+
+  unit        Unit         @relation(fields: [unitId], references: [id])
+  client      Client?      @relation(fields: [clientId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+  items       SaleItem[]
+  payments    Payment[]
+
+  @@index([unitId, createdAt])
+}
+
+model SaleItem {
+  id               String       @id @default(uuid()) @db.Uuid
+  saleId           String       @db.Uuid
+  kind             SaleItemKind
+  serviceId        String?      @db.Uuid
+  productId        String?      @db.Uuid
+  barberId         String?      @db.Uuid
+  description      String // snapshot do nome
+  quantity         Int          @default(1)
+  unitPrice        Decimal      @db.Decimal(12, 2) // snapshot do preço
+  unitCost         Decimal?     @db.Decimal(12, 2) // snapshot do custo (produtos)
+  discount         Decimal      @default(0) @db.Decimal(12, 2)
+  total            Decimal      @db.Decimal(12, 2)
+  commissionRuleId String?      @db.Uuid
+  commissionPct    Decimal?     @db.Decimal(5, 2) // snapshot
+  commissionAmount Decimal?     @db.Decimal(12, 2) // snapshot
+  ruleSnapshot     Json?
+
+  sale        Sale               @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  service     Service?           @relation(fields: [serviceId], references: [id])
+  product     Product?           @relation(fields: [productId], references: [id])
+  barber      Barber?            @relation(fields: [barberId], references: [id])
+  obligations BarberObligation[]
+
+  @@index([barberId])
+}
+
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  saleId       String        @db.Uuid
+  accountId    String        @db.Uuid
+  method       PaymentMethod
+  amount       Decimal       @db.Decimal(12, 2)
+  status       PaymentStatus @default(CONFIRMED)
+  paidAt       DateTime      @default(now()) @db.Timestamptz(3)
+  reversedAt   DateTime?     @db.Timestamptz(3)
+  reversalReason String?
+  idempotencyKey String?     @unique
+  createdById  String?       @db.Uuid
+
+  sale         Sale                   @relation(fields: [saleId], references: [id])
+  account      FinancialAccount       @relation(fields: [accountId], references: [id])
+  transactions FinancialTransaction[]
+
+  @@index([saleId])
+}
+
+// ───────────────────── Obrigações com profissionais ─────────────────────
+
+/// Comissões, remuneração fixa, aluguel de cadeira, bônus e ajustes.
+/// amount = valor calculado/devido; settledAmount = quanto já foi pago/recebido.
+model BarberObligation {
+  id              String              @id @default(uuid()) @db.Uuid
+  barberId        String              @db.Uuid
+  unitId          String              @db.Uuid
+  type            ObligationType
+  direction       ObligationDirection
+  amount          Decimal             @db.Decimal(12, 2)
+  settledAmount   Decimal             @default(0) @db.Decimal(12, 2)
+  status          ObligationStatus    @default(OPEN)
+  referenceStart  DateTime?           @db.Date
+  referenceEnd    DateTime?           @db.Date
+  saleItemId      String?             @db.Uuid
+  ruleId          String?             @db.Uuid
+  ruleSnapshot    Json?
+  description     String?
+  createdById     String?             @db.Uuid
+  createdAt       DateTime            @default(now()) @db.Timestamptz(3)
+  cancelledAt     DateTime?           @db.Timestamptz(3)
+
+  barber      Barber                    @relation(fields: [barberId], references: [id])
+  unit        Unit                      @relation(fields: [unitId], references: [id])
+  saleItem    SaleItem?                 @relation(fields: [saleItemId], references: [id])
+  allocations BarberPayoutAllocation[]
+
+  @@index([barberId, unitId, status])
+}
+
+model BarberPayout {
+  id          String   @id @default(uuid()) @db.Uuid
+  barberId    String   @db.Uuid
+  unitId      String   @db.Uuid
+  accountId   String   @db.Uuid
+  direction   ObligationDirection
+  amount      Decimal  @db.Decimal(12, 2)
+  paidAt      DateTime @default(now()) @db.Timestamptz(3)
+  notes       String?
+  createdById String?  @db.Uuid
+
+  barber       Barber                   @relation(fields: [barberId], references: [id])
+  unit         Unit                     @relation(fields: [unitId], references: [id])
+  account      FinancialAccount         @relation(fields: [accountId], references: [id])
+  allocations  BarberPayoutAllocation[]
+  transactions FinancialTransaction[]
+}
+
+model BarberPayoutAllocation {
+  payoutId     String  @db.Uuid
+  obligationId String  @db.Uuid
+  amount       Decimal @db.Decimal(12, 2)
+
+  payout     BarberPayout     @relation(fields: [payoutId], references: [id])
+  obligation BarberObligation @relation(fields: [obligationId], references: [id])
+
+  @@id([payoutId, obligationId])
+}
+
+// ───────────────────── Financeiro ─────────────────────
+
+model FinancialAccount {
+  id             String       @id @default(uuid()) @db.Uuid
+  unitId         String       @db.Uuid
+  name           String
+  type           AccountType
+  openingBalance Decimal      @default(0) @db.Decimal(12, 2)
+  openingDate    DateTime     @default(now()) @db.Date
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  unit         Unit                   @relation(fields: [unitId], references: [id])
+  transactions FinancialTransaction[]
+  payments     Payment[]
+  payouts      BarberPayout[]
+  cashClosings CashClosing[]
+  transfersOut Transfer[]             @relation("TransferFromAccount")
+  transfersIn  Transfer[]             @relation("TransferToAccount")
+
+  @@unique([unitId, name])
+}
+
+model FinancialCategory {
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @db.Uuid
+  name      String
+  kind      CategoryKind
+
+  company      Company                @relation(fields: [companyId], references: [id])
+  bills        Bill[]
+  transactions FinancialTransaction[]
+
+  @@unique([companyId, kind, name])
+}
+
+/// Contas a pagar e a receber.
+model Bill {
+  id          String     @id @default(uuid()) @db.Uuid
+  unitId      String     @db.Uuid
+  kind        BillKind
+  categoryId  String?    @db.Uuid
+  description String
+  counterparty String?
+  amount      Decimal    @db.Decimal(12, 2)
+  paidAmount  Decimal    @default(0) @db.Decimal(12, 2)
+  dueDate     DateTime   @db.Date
+  status      BillStatus @default(OPEN)
+  createdById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  cancelledAt DateTime?  @db.Timestamptz(3)
+
+  unit         Unit                   @relation(fields: [unitId], references: [id])
+  category     FinancialCategory?     @relation(fields: [categoryId], references: [id])
+  transactions FinancialTransaction[]
+
+  @@index([unitId, dueDate])
+}
+
+/// Movimentação de caixa/conta. amount é sempre positivo; direction define o sentido.
+/// Imutável: correções são feitas com uma movimentação REVERSAL apontando para a original.
+model FinancialTransaction {
+  id           String      @id @default(uuid()) @db.Uuid
+  unitId       String      @db.Uuid
+  accountId    String      @db.Uuid
+  direction    TxDirection
+  kind         TxKind
+  amount       Decimal     @db.Decimal(12, 2)
+  occurredAt   DateTime    @default(now()) @db.Timestamptz(3)
+  description  String?
+  categoryId   String?     @db.Uuid
+  paymentId    String?     @db.Uuid
+  billId       String?     @db.Uuid
+  payoutId     String?     @db.Uuid
+  transferId   String?     @db.Uuid // movimentações internas: excluídas do consolidado
+  reversalOfId String?     @unique @db.Uuid
+  cashClosingId String?    @db.Uuid
+  createdById  String?     @db.Uuid
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+
+  unit        Unit                  @relation(fields: [unitId], references: [id])
+  account     FinancialAccount      @relation(fields: [accountId], references: [id])
+  category    FinancialCategory?    @relation(fields: [categoryId], references: [id])
+  payment     Payment?              @relation(fields: [paymentId], references: [id])
+  bill        Bill?                 @relation(fields: [billId], references: [id])
+  payout      BarberPayout?         @relation(fields: [payoutId], references: [id])
+  transfer    Transfer?             @relation(fields: [transferId], references: [id])
+  cashClosing CashClosing?          @relation(fields: [cashClosingId], references: [id])
+  reversalOf  FinancialTransaction? @relation("Reversal", fields: [reversalOfId], references: [id])
+  reversedBy  FinancialTransaction? @relation("Reversal")
+
+  @@index([unitId, occurredAt])
+  @@index([accountId, occurredAt])
+}
+
+/// Transferência entre contas (mesma unidade ou unidades diferentes).
+/// Gera um TRANSFER_OUT e um TRANSFER_IN ligados por transferId.
+model Transfer {
+  id            String   @id @default(uuid()) @db.Uuid
+  fromUnitId    String   @db.Uuid
+  toUnitId      String   @db.Uuid
+  fromAccountId String   @db.Uuid
+  toAccountId   String   @db.Uuid
+  amount        Decimal  @db.Decimal(12, 2)
+  occurredAt    DateTime @default(now()) @db.Timestamptz(3)
+  description   String?
+  createdById   String?  @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  fromUnit     Unit                   @relation("TransferFromUnit", fields: [fromUnitId], references: [id])
+  toUnit       Unit                   @relation("TransferToUnit", fields: [toUnitId], references: [id])
+  fromAccount  FinancialAccount       @relation("TransferFromAccount", fields: [fromAccountId], references: [id])
+  toAccount    FinancialAccount       @relation("TransferToAccount", fields: [toAccountId], references: [id])
+  transactions FinancialTransaction[]
+}
+
+/// Fechamento/conciliação de caixa de uma conta em um período.
+model CashClosing {
+  id              String   @id @default(uuid()) @db.Uuid
+  unitId          String   @db.Uuid
+  accountId       String   @db.Uuid
+  periodStart     DateTime @db.Timestamptz(3)
+  periodEnd       DateTime @db.Timestamptz(3)
+  expectedBalance Decimal  @db.Decimal(12, 2)
+  countedBalance  Decimal  @db.Decimal(12, 2)
+  difference      Decimal  @db.Decimal(12, 2)
+  notes           String?
+  closedById      String?  @db.Uuid
+  closedAt        DateTime @default(now()) @db.Timestamptz(3)
+
+  unit         Unit                   @relation(fields: [unitId], references: [id])
+  account      FinancialAccount       @relation(fields: [accountId], references: [id])
+  transactions FinancialTransaction[]
+
+  @@index([accountId, periodEnd])
+}
+
+// ───────────────────── Site, avaliações e auditoria ─────────────────────
+
+/// Versões da personalização visual (cores, logo, banners, textos, ordem das seções).
+/// Apenas uma versão PUBLISHED por empresa (garantido por índice parcial na migração).
+model SiteConfigVersion {
+  id          String           @id @default(uuid()) @db.Uuid
+  companyId   String           @db.Uuid
+  version     Int
+  status      SiteConfigStatus @default(DRAFT)
+  data        Json
+  note        String?
+  createdById String?          @db.Uuid
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  publishedAt DateTime?        @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, version])
+}
+
+/// Avaliação vinculada a um atendimento concluído (garante que é "real").
+model Review {
+  id            String       @id @default(uuid()) @db.Uuid
+  unitId        String       @db.Uuid
+  appointmentId String       @unique @db.Uuid
+  clientId      String       @db.Uuid
+  barberId      String       @db.Uuid
+  rating        Int
+  comment       String?
+  status        ReviewStatus @default(PENDING)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  moderatedAt   DateTime?    @db.Timestamptz(3)
+
+  unit        Unit        @relation(fields: [unitId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  client      Client      @relation(fields: [clientId], references: [id])
+  barber      Barber      @relation(fields: [barberId], references: [id])
+
+  @@index([unitId, status])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  userId    String?  @db.Uuid
+  unitId    String?  @db.Uuid
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  ip        String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entity, entityId])
+}
